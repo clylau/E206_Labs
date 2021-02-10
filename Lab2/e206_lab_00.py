@@ -5,12 +5,13 @@ import math
 import random
 from traj_planner_utils import *
 from traj_tracker import *
+import numpy as np
 
     
 def main():
   # Create a motion planning problem and solve it
   current_state, desired_state, objects, walls = create_motion_planning_problem()
-  desired_traj = construct_dubins_traj(current_state, desired_state)
+  desired_traj = [desired_state] #construct_dubins_traj(current_state, desired_state)
   
   # Construct an environment
   env = gym.make("fetch-v0") # <-- this we need to create
@@ -28,7 +29,7 @@ def main():
   observation = [0,0,0,0,0]
   actual_traj = []
   #plot_traj(desired_traj, desired_traj, objects, walls)
-  while not traj_tracker.is_traj_tracked():
+  while not controller.traj_tracked: #traj_tracker.is_traj_tracked():
       current_state = [current_time_stamp, observation[0], observation[1], observation[2]]
       desired_state = traj_tracker.get_traj_point_to_track(current_state)
       action = controller.point_tracking_control(desired_state, current_state)
@@ -43,7 +44,8 @@ def main():
   
 def create_motion_planning_problem():
   current_state = [0, 0, 0, 0]
-  desired_state = [5, 3, 3, 1.57]#current_state #[20, 2.5, -2.5, 1.57]
+  desired_state = [0, 0, -2, -np.pi/2] #[2, 2, 0, 0] #current_state #[20, 2.5, -2.5, 1.57]
+  #desired_state = [[0, 2, 0, 0], [0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 0, 0], [0, 0, 2, np.pi/2], [0, 0, 0, 0], [0, -2, 2, 0], [0, 0, 0, 0], [0, -2, 0, 0], [0, 0, 0, 0], [0, -2, -2, 0], [0, 0, 0, 0], [0, 0, -2, -np.pi/2], [0, 0, 0, 0], [0, 2, -2, 0], [0, 0, 0, 0],]
   maxR = 8
   walls = [[-maxR, maxR, maxR, maxR, 2*maxR], [maxR, maxR, maxR, -maxR, 2*maxR], [maxR, -maxR, -maxR, -maxR, 2*maxR], [-maxR, -maxR, -maxR, maxR, 2*maxR] ]
   objects = [[4, 0, 1.0], [-2, -3, 1.5]]
