@@ -30,9 +30,50 @@ class TrajectoryTracker():
         Returns:
           desired_state (list of floats: The desired state to track - Time, X, Y, Theta (s, m, m, rad).
     """
-    self.current_point_to_track = 0
 
-    return self.traj[self.current_point_to_track]
+    #find the closest point in time
+    current_time = current_state[0]
+    traj_times = np.array([traj_point[0] for traj_point in self.traj])
+    closest_idx = np.argmin(np.abs(traj_times - current_time))
+
+    closest_point = self.traj[closest_idx]
+
+    delta_t = LOOK_AHEAD_TIME
+
+
+    if(closest_idx != len(self.traj) - 1):
+
+      next_closest_point = self.traj[closest_idx + 1]
+
+      #calculate the speed of the robot between the two points
+      delta_x = next_closest_point[1] - closest_point[1])
+      delta_y = next_closest_point[2] - closest_point[2])
+      speed = np.sqrt(np.square(delta_x) + np.square(delta_y)) / (next_closest_point[0] - closest_point[0])
+
+      #calculate the slope of the line between the two points
+      slope = delta_y / delta_x
+
+      #linearly interpolate the point we should set as the destination
+      #these equations were found by solving the system of equations for x and y that satisified
+      #(1) being a distance away from the starting point of v*delta_t
+      #(2) being on the line formed between the two x, y pairs
+      x_dest = speed*delta_t/(np.sqrt(np.square(slope) + 1)) + closest_point[1]
+      y_dest = speed*delta_t*slope/(np.sqrt(np.square(slope) + 1)) + closest_point[2]
+
+      #calculating the angular interpolation
+      angular_speed = (next_closest_point[3] - closest_point[3]) / (next_closest_point[0] - closest_point[0])
+
+      theta_dest = closest_point[3] + angular_speed*delta_t
+
+      time_dest = closest_point[0] + delta_t
+
+      destination = [time_dest, x_dest, y_dest, theta_dest]
+
+    else:
+
+      destination = self.traj[-1]
+
+    return destination
   
   def print_traj(self):
     """ Print the trajectory points.
@@ -72,9 +113,9 @@ class PointTracker():
 
 
     #define control law coefficients
-    k_rho = 5
+    k_rho = 9
     k_alpha = 10
-    k_beta = -5
+    k_beta = -7
 
     delta_x = desired_state[1] - current_state[1]
     delta_y = desired_state[2] - current_state[2]

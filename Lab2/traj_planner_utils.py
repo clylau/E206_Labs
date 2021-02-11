@@ -24,7 +24,7 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
   traj.append(traj_point)
 
   turning_rad = 1.0
-  step_size = 0.5
+  step_size = DISTANCE_STEP_SIZE
 
   path = dubins.shortest_path(traj_point_0[1:], traj_point_1[1:], turning_rad)
   configs, _ = path.sample_many(step_size)
