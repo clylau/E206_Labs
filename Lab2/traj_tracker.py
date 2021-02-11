@@ -46,8 +46,8 @@ class TrajectoryTracker():
       next_closest_point = self.traj[closest_idx + 1]
 
       #calculate the speed of the robot between the two points
-      delta_x = next_closest_point[1] - closest_point[1])
-      delta_y = next_closest_point[2] - closest_point[2])
+      delta_x = next_closest_point[1] - closest_point[1]
+      delta_y = next_closest_point[2] - closest_point[2]
       speed = np.sqrt(np.square(delta_x) + np.square(delta_y)) / (next_closest_point[0] - closest_point[0])
 
       #calculate the slope of the line between the two points
@@ -63,7 +63,7 @@ class TrajectoryTracker():
       #calculating the angular interpolation
       angular_speed = (next_closest_point[3] - closest_point[3]) / (next_closest_point[0] - closest_point[0])
 
-      theta_dest = closest_point[3] + angular_speed*delta_t
+      theta_dest = angle_diff(closest_point[3] + angular_speed*delta_t)
 
       time_dest = closest_point[0] + delta_t
 
@@ -72,6 +72,14 @@ class TrajectoryTracker():
     else:
 
       destination = self.traj[-1]
+
+      rho = np.sqrt(np.square(destination[1] - current_state[1]) + np.square(destination[2] - current_state[2]))
+      delta_theta = angle_diff(destination[3] - current_state[3])
+
+
+      #check if we've reached the final point
+      if(rho < MIN_DIST_TO_POINT and delta_theta < MIN_ANG_TO_POINT):
+        self.traj_tracked = True
 
     return destination
   

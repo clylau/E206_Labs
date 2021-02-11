@@ -6,6 +6,7 @@
 import math
 import dubins
 import matplotlib.pyplot as plt
+import numpy as np
 
 DISTANCE_STEP_SIZE = 0.1 #m
 COLLISION_INDEX_STEP_SIZE = 5
@@ -38,10 +39,10 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
       timeStamp += dt
 
   configs.append(traj_point_1)
-  print()
-  print(configs)
+  # print()
+  # print(configs)
 
-  print()
+  # print()
   #print(traj_point_0)
   #print(traj_point_1)
   #print(configs)
@@ -165,6 +166,51 @@ def angle_diff(ang):
     ang += 2*math.pi
 
   return ang
+
+
+def calculateErrors(desired_traj, actual_traj):
+  """
+  Yare Yare Daze
+  ba buh bunoh bah 
+  """
+
+  #pick the closest points in time to the desired tracjectory
+  closest_idxs = np.zeros(len(desired_traj), dtype = "int32")
+  traj_times = np.array([traj_point[0] for traj_point in actual_traj])
+
+  for i in range(len(desired_traj)):
+
+    current_time = desired_traj[i][0]
+    closest_idx = np.argmin(np.abs(traj_times - current_time))
+
+    closest_idxs[i] = closest_idx
+
+  
+  closest_idxs = closest_idxs.astype("int32")
+  actual_xs = np.array([traj_point[1] for traj_point in actual_traj])
+  actual_ys = np.array([traj_point[2] for traj_point in actual_traj])
+  actual_thetas = np.array([traj_point[3] for traj_point in actual_traj])
+
+  x_actual = actual_xs[closest_idxs]
+  y_actual = actual_ys[closest_idxs]
+  theta_actual = actual_thetas[closest_idxs]
+
+  x_desired = np.array([traj_point[1] for traj_point in desired_traj])
+  y_desired = np.array([traj_point[2] for traj_point in desired_traj])
+  theta_desired = np.array([traj_point[3] for traj_point in desired_traj])
+
+  x_rms = np.sqrt(np.mean(np.square(x_actual - x_desired)))
+  y_rms = np.sqrt(np.mean(np.square(y_actual - y_desired)))
+
+  #calculate the theta differences individual because vectorizing is for losers fuck you
+  theta_diffs = np.zeros(len(theta_desired))
+  for i in range(len(theta_desired)):
+    theta_diffs[i] = angle_diff(theta_actual[i] - theta_desired[i])
+
+  theta_rms = np.sqrt(np.mean(np.square(theta_diffs)))
+
+  return x_rms, y_rms, theta_rms
+
   
 if __name__ == '__main__':
   #tp0 = [0,0,0,0]
