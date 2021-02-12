@@ -76,7 +76,7 @@ def main2():
     current_state = [current_time_stamp, observation[0], observation[1], observation[2]]
 
     desired_state = desired_traj[index]
-    print(desired_state)
+    # print(desired_state)
 
     action = controller.point_tracking_control(desired_state, current_state)
     observation, reward, done, dummy = env.step(action)
@@ -100,13 +100,13 @@ def create_motion_planning_problem():
 
 
   #point tracking experiment
-  desired_state = [[0, 2, 0, 0],[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 0, 0], [0, 0, 2, np.pi/2], [0, 0, 0, 0], [0, -2, 2, 0], [0, 0, 0, 0], [0, -2, 0, 0], [0, 0, 0, 0], [0, -2, -2, 0], [0, 0, 0, 0], [0, 0, -2, -np.pi/2], [0, 0, 0, 0], [0, 2, -2, 0], [0, 0, 0, 0],]
+  #desired_state = [[0, 2, 0, 0],[0, 0, 0, 0], [0, 2, 2, 0], [0, 0, 0, 0], [0, 0, 2, np.pi/2], [0, 0, 0, 0], [0, -2, 2, 0], [0, 0, 0, 0], [0, -2, 0, 0], [0, 0, 0, 0], [0, -2, -2, 0], [0, 0, 0, 0], [0, 0, -2, -np.pi/2], [0, 0, 0, 0], [0, 2, -2, 0], [0, 0, 0, 0],]
 
   
   #dubins desired states
   #desired_state = [20, 5, 0, 0]
   #desired_state = [20, 5, 3, 0]
-  #desired_state = [20, 5, -3, 0]
+  desired_state = [20, 5, -3, 0]
 
   #desired_state = [0, -2, 0, 0] #[2, 2, 0, 0] #current_state #[20, 2.5, -2.5, 1.57]
   maxR = 8
@@ -116,7 +116,7 @@ def create_motion_planning_problem():
   return current_state, desired_state, objects, walls
 
 if __name__ == '__main__':
-    #main()
-    main2()
+    main()
+    #main2()
     
     
