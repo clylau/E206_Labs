@@ -68,9 +68,9 @@ def plot_traj(traj_desired, traj_actual, objects, walls):
     x_desired.append(tp[1])
     y_desired.append(tp[2])
     theta_desired.append(angle_diff(tp[3]))
-  axis_array[0].plot(x_desired, y_desired, 'b')
   axis_array[0].plot(x_desired[0], y_desired[0], 'ko')
-  axis_array[0].plot(x_desired[-1], y_desired[-1], 'kx')
+  axis_array[0].plot(x_desired[-1], y_desired[-1], 'kx', label='_nolegend_')
+  axis_array[0].plot(x_desired, y_desired, 'b')
   time_stamp_actual = []
   x_actual = []
   y_actual = []
@@ -99,6 +99,8 @@ def plot_traj(traj_desired, traj_actual, objects, walls):
   axis_array[0].set_xlabel('X (m)')
   axis_array[0].set_ylabel('Y (m)')
   axis_array[0].axis('equal')
+  #adding the following line
+  axis_array[0].legend(["First Goal", "Desired Trajectory", "Actual Trajectory"])
   
   axis_array[1].plot(time_stamp_desired, x_desired,'b')
   axis_array[1].plot(time_stamp_desired, y_desired,'b--')
