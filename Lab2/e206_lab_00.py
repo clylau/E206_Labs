@@ -105,8 +105,8 @@ def create_motion_planning_problem():
   
   #dubins desired states
   #desired_state = [20, 5, 0, 0]
-  #desired_state = [20, 5, 3, 0]
-  desired_state = [20, 5, -3, 0]
+  desired_state = [20, 5, 3, 0]
+  #desired_state = [20, 5, -3, 0]
 
   #desired_state = [0, -2, 0, 0] #[2, 2, 0, 0] #current_state #[20, 2.5, -2.5, 1.57]
   maxR = 8
