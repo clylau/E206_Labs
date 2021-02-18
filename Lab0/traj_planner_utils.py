@@ -6,7 +6,6 @@
 import math
 import dubins
 import matplotlib.pyplot as plt
-import numpy as np
 
 DISTANCE_STEP_SIZE = 0.1 #m
 COLLISION_INDEX_STEP_SIZE = 5
@@ -25,7 +24,7 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
   traj.append(traj_point)
 
   turning_rad = 1.0
-  step_size = DISTANCE_STEP_SIZE
+  step_size = 0.5
 
   path = dubins.shortest_path(traj_point_0[1:], traj_point_1[1:], turning_rad)
   configs, _ = path.sample_many(step_size)
@@ -39,10 +38,10 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
       timeStamp += dt
 
   configs.append(traj_point_1)
-  # print()
-  # print(configs)
+  print()
+  print(configs)
 
-  # print()
+  print()
   #print(traj_point_0)
   #print(traj_point_1)
   #print(configs)
@@ -68,9 +67,9 @@ def plot_traj(traj_desired, traj_actual, objects, walls):
     x_desired.append(tp[1])
     y_desired.append(tp[2])
     theta_desired.append(angle_diff(tp[3]))
-  axis_array[0].plot(x_desired[0], y_desired[0], 'ko')
-  axis_array[0].plot(x_desired[-1], y_desired[-1], 'kx') #, label='_nolegend_')
   axis_array[0].plot(x_desired, y_desired, 'b')
+  axis_array[0].plot(x_desired[0], y_desired[0], 'ko')
+  axis_array[0].plot(x_desired[-1], y_desired[-1], 'kx')
   time_stamp_actual = []
   x_actual = []
   y_actual = []
@@ -99,8 +98,6 @@ def plot_traj(traj_desired, traj_actual, objects, walls):
   axis_array[0].set_xlabel('X (m)')
   axis_array[0].set_ylabel('Y (m)')
   axis_array[0].axis('equal')
-  #adding the following line
-  axis_array[0].legend(["Starting Point", "End Point", "Desired Trajectory", "Actual Trajectory"])
   
   axis_array[1].plot(time_stamp_desired, x_desired,'b')
   axis_array[1].plot(time_stamp_desired, y_desired,'b--')
@@ -109,7 +106,6 @@ def plot_traj(traj_desired, traj_actual, objects, walls):
   axis_array[1].plot(time_stamp_actual, y_actual,'k--')
   axis_array[1].plot(time_stamp_actual, theta_actual,'k-.')
   axis_array[1].set_xlabel('Time (s)')
-  axis_array[1].set_ylabel('Units Vary, see Legend')
   axis_array[1].legend(['X Desired (m)', 'Y Desired (m)', 'Theta Desired (rad)', 'X (m)', 'Y (m)', 'Theta (rad)'])
 
   plt.show()
@@ -169,62 +165,17 @@ def angle_diff(ang):
     ang += 2*math.pi
 
   return ang
-
-
-def calculateErrors(desired_traj, actual_traj):
-  """
-  Yare Yare Daze
-  ba buh bunoh bah 
-  """
-
-  #pick the closest points in time to the desired tracjectory
-  closest_idxs = np.zeros(len(desired_traj), dtype = "int32")
-  traj_times = np.array([traj_point[0] for traj_point in actual_traj])
-
-  for i in range(len(desired_traj)):
-
-    current_time = desired_traj[i][0]
-    closest_idx = np.argmin(np.abs(traj_times - current_time))
-
-    closest_idxs[i] = closest_idx
-
-  
-  closest_idxs = closest_idxs.astype("int32")
-  actual_xs = np.array([traj_point[1] for traj_point in actual_traj])
-  actual_ys = np.array([traj_point[2] for traj_point in actual_traj])
-  actual_thetas = np.array([traj_point[3] for traj_point in actual_traj])
-
-  x_actual = actual_xs[closest_idxs]
-  y_actual = actual_ys[closest_idxs]
-  theta_actual = actual_thetas[closest_idxs]
-
-  x_desired = np.array([traj_point[1] for traj_point in desired_traj])
-  y_desired = np.array([traj_point[2] for traj_point in desired_traj])
-  theta_desired = np.array([traj_point[3] for traj_point in desired_traj])
-
-  x_rms = np.sqrt(np.mean(np.square(x_actual - x_desired)))
-  y_rms = np.sqrt(np.mean(np.square(y_actual - y_desired)))
-
-  #calculate the theta differences individual because vectorizing is for losers fuck you
-  theta_diffs = np.zeros(len(theta_desired))
-  for i in range(len(theta_desired)):
-    theta_diffs[i] = angle_diff(theta_actual[i] - theta_desired[i])
-
-  theta_rms = np.sqrt(np.mean(np.square(theta_diffs)))
-
-  return x_rms, y_rms, theta_rms
-
   
 if __name__ == '__main__':
-  #tp0 = [0,0,0,0]
+  tp0 = [0,0,0,0]
   #tp0 = [0, -3, -3, -math.pi/4]
   #tp0 = [0, -3, 3, 0]
-  tp0 = [0, -3, 0, math.pi/2]
+  #tp0 = [0, -3, 0, -math.pi/2]
 
-  #tp1 = [5, 3, 3, math.pi/2]#[10,4,-4, -1.57]
+  tp1 = [5, 3, 3, math.pi/2]#[10,4,-4, -1.57]
   #tp1 = [10, 3, 3, -math.pi/4]
   #tp1 = [5, 3, -3, 0]
-  tp1 = [10, 3, 0, -math.pi/2]
+  #tp1 = [10, 3, 0, -math.pi/2]
 
   traj = construct_dubins_traj(tp0, tp1)
   maxR = 8
