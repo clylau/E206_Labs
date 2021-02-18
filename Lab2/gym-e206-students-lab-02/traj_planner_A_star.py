@@ -58,22 +58,43 @@ class A_Star_Planner():
   def add_to_fringe(self, node):
     
     # Add code here.
-    pass
+    self.fringe.append(node)
+
+    return
+
     
   def get_best_node_on_fringe(self):
-    return self.fringe.pop(0)
+
+    f_cost_list = [point.f_cost for point in self.fringe]
+
+    # TODO if things break, add tie breaker using g_cost
+
+    minPoint = np.argmin(f_cost_list)
+
+    return self.fringe.pop(minPoint)
     
   def get_children(self, node_to_expand):
     children_list = []
     
     # Add code here.
 
+    for i in range(len(CHILDREN_DELTAS)):
+      t = node_to_expand.time + EDGE_TIME
+      x = node_to_expand.x + DISTANCE_DELTA * np.cos(angle_diff(node_to_expand.theta + CHILDREN_DELTAS[i]))
+      y = node_to_expand.y + DISTANCE_DELTA * np.sin(angle_diff(node_to_expand.theta + CHILDREN_DELTAS[i]))
+      theta = angle_diff(node_to_expand.theta + 2*CHILDREN_DELTAS[i])
+
+      childNode = self.create_node([t, x, y, theta], node_to_expand)
+      children_list.append(childNode)
+    
         
     return children_list
 
   def generate_goal_node(self, node, desired_state):
     
     # Add code here.
+
+    # TODO unclear what the difference is between this and regular create_node()
       
     return None
     
@@ -81,13 +102,21 @@ class A_Star_Planner():
     
     # Add code here.
     
-    return None #Node(state, parent_node, g_cost, h_cost)
+    # TODO DO NOT KEEP THIS FIX IT IDIOT D:
+    g_cost = 0
+    h_cost = self.estimate_cost_to_goal(state)
+
+    newNode = Node(state, parent_node, g_cost, h_cost)
+    
+    return newNode #Node(state, parent_node, g_cost, h_cost)
 
   def create_initial_node(self, state):
     
     # Add code here.
+    g_cost = 0
+    h_cost = self.estimate_cost_to_goal(state)
 
-    return #Node(state, None, g_cost, h_cost)
+    return Node(state, None, g_cost, h_cost)
 
   def calculate_edge_distance(self, state, parent_node):
     

@@ -21,10 +21,28 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
         traj_distance (float): The length ofthe trajectory (m).
   """
   traj = []
-  traj_distance = 0
-  
-  # Add code here
+  traj_point = [0,0,0,0]
+  traj.append(traj_point)
 
+  turning_rad = 1.0
+  step_size = DISTANCE_STEP_SIZE
+
+  path = dubins.shortest_path(traj_point_0[1:], traj_point_1[1:], turning_rad)
+  configs, _ = path.sample_many(step_size)
+
+  dt = (traj_point_1[0] - traj_point_0[0]) / len(configs)
+  timeStamp = traj_point_0[0]
+
+  for i in range(len(configs)):
+      configs[i] = list(configs[i])
+      configs[i].insert(0, timeStamp)
+      timeStamp += dt
+
+  configs.append(traj_point_1)
+
+  traj = configs
+
+  traj_distance = 'nani'
       
   return traj, traj_distance
 
