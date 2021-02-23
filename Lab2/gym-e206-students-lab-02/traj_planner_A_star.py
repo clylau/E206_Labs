@@ -50,14 +50,58 @@ class A_Star_Planner():
     """
     self.fringe = []
     self.desired_state = desired_state
-    self.objects = objects
+    self.objects = objects #x, y coordinates of the objects
     self.walls = walls
-          
-    return []
+
+    #generate the starting node
+    self.add_to_fringe(self.create_initial_node(initial_state))
+
+    path = []
+
+    #while there are still nodes in the fringe
+    while(len(self.fringe) != 0):
+
+      #pop the best node off the fringe
+      curr_node = self.get_best_node_on_fringe()
+
+      goal_node = self.generate_goal_node(curr_node, desired_state)
+
+      #if we have a clear path to the goal, go for it
+      if(goal_node != None):
+        break
+
+      child_nodes = self.get_children(curr_node)
+
+      self.fringe += child_nodes
+
+    path = self.createPath(goal_node)
+
+    traj = []
+
+    for idx in range(len(path) - 1):
+      pose1 = path[idx]
+      pose2 = path[idx + 1]
+      
+      inter_pose_traj, _ = construct_dubins_traj(pose1.state, pose2.state)
+      traj += inter_pose_traj
+
+    return traj
     
+  def createPath(self, goal_node):
+    """
+    creates path from the goal node
+    """
+    currNode = goal_node
+    path = []
+    
+    while(currNode.parent_node != None):
+      path.insert(0, currNode)
+      currNode = currNode.parent_node
+
+    return path
+
   def add_to_fringe(self, node):
     
-    # Add code here.
     self.fringe.append(node)
 
     return
@@ -70,21 +114,25 @@ class A_Star_Planner():
     # TODO if things break, add tie breaker using g_cost
 
     minPoint = np.argmin(f_cost_list)
+    #print(f_cost_list[minPoint])
 
     return self.fringe.pop(minPoint)
     
   def get_children(self, node_to_expand):
     children_list = []
+    t, x, y, theta = node_to_expand.state
+    #print(t, x, y, theta)
     
     # Add code here.
 
-    for i in range(len(CHILDREN_DELTAS)):
-      t = node_to_expand.time + EDGE_TIME
-      x = node_to_expand.x + DISTANCE_DELTA * np.cos(angle_diff(node_to_expand.theta + CHILDREN_DELTAS[i]))
-      y = node_to_expand.y + DISTANCE_DELTA * np.sin(angle_diff(node_to_expand.theta + CHILDREN_DELTAS[i]))
-      theta = angle_diff(node_to_expand.theta + 2*CHILDREN_DELTAS[i])
+    for i in range(len(self.CHILDREN_DELTAS)):
+      t_c = t + self.EDGE_TIME
+      x_c = x + self.DISTANCE_DELTA * np.cos(angle_diff(theta + self.CHILDREN_DELTAS[i]))
+      y_c = y + self.DISTANCE_DELTA * np.sin(angle_diff(theta + self.CHILDREN_DELTAS[i]))
+      theta_c = angle_diff(theta + 2*self.CHILDREN_DELTAS[i])
 
-      childNode = self.create_node([t, x, y, theta], node_to_expand)
+      childNode = self.create_node([t_c, x_c, y_c, theta_c], node_to_expand)
+
       children_list.append(childNode)
     
         
@@ -92,18 +140,23 @@ class A_Star_Planner():
 
   def generate_goal_node(self, node, desired_state):
     
-    # Add code here.
+    #This function checks if the node of interest has a direct path to the goal. If so, we return the goal node
+    #if not, we return None
+    goal_node = self.create_node(desired_state, node)
 
-    # TODO unclear what the difference is between this and regular create_node()
-      
-    return None
+    #if the trajectory between the goal and this node has a collison, return None
+    if(self.collision_found(node, goal_node)):
+      return None
+
+    #otherwise, we've found our path!
+    return goal_node
     
   def create_node(self, state, parent_node):
     
     # Add code here.
     
     # TODO DO NOT KEEP THIS FIX IT IDIOT D:
-    g_cost = 0
+    g_cost = parent_node.g_cost + self.calculate_edge_distance(state, parent_node)
     h_cost = self.estimate_cost_to_goal(state)
 
     newNode = Node(state, parent_node, g_cost, h_cost)
@@ -120,9 +173,19 @@ class A_Star_Planner():
 
   def calculate_edge_distance(self, state, parent_node):
     
-    # Add code here.
+    #retrieve the parent state
+    parent_state = parent_node.state
 
-    return LARGE_NUMBER
+    #calculate the trajectory between the parent and new node
+    traj, traj_distance = construct_dubins_traj(parent_state, state)
+
+    if collision_found(traj, self.objects, self.walls):
+      return self.LARGE_NUMBER
+
+    #the edge cost is equal to the 
+    edge_distance = traj_distance[-1]
+
+    return edge_distance
 
   def estimate_cost_to_goal(self, state):
     return math.sqrt( (self.desired_state[1] - state[1])**2 + (self.desired_state[2] - state[2])**2 )
@@ -158,7 +221,62 @@ class A_Star_Planner():
           collision_found (boolean): True if there is a collision.
     """
     traj, traj_distance = construct_dubins_traj(node_1.state, node_2.state)
-    return collision_found(traj, self.objects, self.walls)
+    #return collision_found(traj, self.objects, self.walls)
+    traj = np.array(traj)
+
+    #radius of objects in environment
+    r_check = 0.75
+
+    #define the indices of the trajectory points to check for colisions
+    traj_idx = np.arange(len(traj), step = 2)
+
+    #placea all objects in a np array
+    objects = np.array(self.objects)
+    walls = np.array(self.walls)
+
+    points_of_interest = traj[traj_idx]
+
+    #check for collisions with the walls
+    #note: assming the walls are square. in the future, if they are not, use this algorithm:
+    #https://bryceboe.com/2006/10/23/line-segment-intersection-algorithm/
+    #https://stackoverflow.com/questions/3838329/how-can-i-check-if-two-segments-intersect?fbclid=IwAR2uBhTU-B7BFqL44hT6g9BfAIIpoZ4CD1LlSDb-eLUnk5TMAbUkUMF_xxw
+    # def ccw(A,B,C):
+    # return (C.y-A.y) * (B.x-A.x) > (B.y-A.y) * (C.x-A.x)
+
+    # # Return true if line segments AB and CD intersect
+    # def intersect(A,B,C,D):
+    #     return ccw(A,C,D) != ccw(B,C,D) and ccw(A,B,C) != ccw(A,B,D)
+
+    x_walls = walls[:, [0, 2]]
+    y_walls = walls[:, [1, 3]]
+
+    x_lower = np.min(x_walls)
+    y_lower = np.min(y_walls)
+    x_upper = np.max(x_walls)
+    y_upper = np.max(y_walls)
+
+    x_points = points_of_interest[:, 1]
+    y_points = points_of_interest[:, 2]
+
+    #if any points are outside of the walls, there must have been a colision.
+    if np.any(x_points > x_upper) or np.any(x_points < x_lower) or np.any(y_points > y_upper) or np.any(y_points < y_lower):
+      return True
+
+
+    x_objects = objects[:, 0]
+    y_objects = objects[:, 1]
+
+    for point in points_of_interest:
+
+      x_point = point[1]
+      y_point = point[2]
+      
+      distances = np.sqrt(np.square(x_point - x_objects) + np.square(y_point - y_objects))
+
+      if np.any(distances < r_check):
+        return True
+
+    return False
 
 if __name__ == '__main__':
   for i in range(0, 5):
