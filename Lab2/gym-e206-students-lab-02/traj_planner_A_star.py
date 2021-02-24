@@ -34,7 +34,7 @@ class A_Star_Planner():
   DIST_TO_GOAL_THRESHOLD = 0.5 #m
   CHILDREN_DELTAS = [-0.5, -0.25, 0.0, 0.25, 0.5]
   DISTANCE_DELTA = 1.5 #m
-  EDGE_TIME = 10 #s
+  EDGE_TIME = 20 #s
   LARGE_NUMBER = 9999999
 
 
@@ -92,10 +92,7 @@ class A_Star_Planner():
 
       final_length += traj_edge_distance_list[-1]
 
-    print(final_length)
-
     timeTook = time.time()  - curTime
-    print("Time Taken: ", timeTook)
     
     return traj, final_length, timeTook
     
@@ -237,7 +234,7 @@ class A_Star_Planner():
     traj = np.array(traj)
 
     #radius of objects in environment
-    r_check = 0.75
+    r_check = 1.5
 
     #define the indices of the trajectory points to check for colisions
     traj_idx = np.arange(len(traj), step = 2)
@@ -291,9 +288,7 @@ class A_Star_Planner():
     return False
 
 if __name__ == '__main__':
-  avgFinalLength = 0
-  avgTime = 0
-  count = 0
+
   for i in range(0, 5):
     maxR = 10
     tp0 = [0, -8, -8, 0]
@@ -310,10 +305,4 @@ if __name__ == '__main__':
     traj, finalLength, timeTook = planner.construct_traj(tp0, tp1, objects, walls)
     if len(traj) > 0:
       plot_traj(traj, traj, objects, walls)
-      avgFinalLength += finalLength
-      avgTime += timeTook
-      count += 1
-  
-  print(avgFinalLength / count)
-  print("Avg Time: ", avgTime / count)
-    
+

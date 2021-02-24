@@ -5,12 +5,15 @@ import math
 import random
 from traj_planner_utils import *
 from traj_tracker import *
-
+from traj_planner_A_star import *
     
 def main():
   # Create a motion planning problem and solve it
   current_state, desired_state, objects, walls = create_motion_planning_problem()
-  desired_traj = construct_dubins_traj(current_state, desired_state)
+  #desired_traj = construct_dubins_traj(current_state, desired_state)
+
+  a_star_planner = A_Star_Planner()
+  desired_traj, _, _ = a_star_planner.construct_traj(current_state, desired_state, objects, walls)
   
   # Construct an environment
   env = gym.make("fetch-v0") # <-- this we need to create
@@ -20,6 +23,7 @@ def main():
 
   # Create the trajectory and tracking controller
   controller = PointTracker()
+
   traj_tracker = TrajectoryTracker(desired_traj)
       
   # Create the feedback loop
@@ -42,13 +46,24 @@ def main():
   env.close()
   
 def create_motion_planning_problem():
-  current_state = [0, 0, 0, 0]
-  desired_state = [20, 5.0, 2.0, 0]
-  maxR = 8
+  #current_state = [0, 0, 0, 0]
+  #desired_state = [20, 5.0, 2.0, 0]
+  #maxR = 8
+  #walls = [[-maxR, maxR, maxR, maxR, 2*maxR], [maxR, maxR, maxR, -maxR, 2*maxR], [maxR, -maxR, -maxR, -maxR, 2*maxR], [-maxR, -maxR, -maxR, maxR, 2*maxR] ]
+  #objects = [[4, 0, 1.0], [-2, -3, 1.5]]
+
+  maxR = 10
+  tp0 = [0, 0, 0, 0]
+  tp1 = [300, random.uniform(-maxR+1, maxR-1), random.uniform(-maxR+1, maxR-1), 0]
   walls = [[-maxR, maxR, maxR, maxR, 2*maxR], [maxR, maxR, maxR, -maxR, 2*maxR], [maxR, -maxR, -maxR, -maxR, 2*maxR], [-maxR, -maxR, -maxR, maxR, 2*maxR] ]
-  objects = [[4, 0, 1.0], [-2, -3, 1.5]]
-  
-  return current_state, desired_state, objects, walls
+  num_objects = 25
+  objects = []
+  for j in range(0, num_objects): 
+    obj = [random.uniform(-maxR+1, maxR-1), random.uniform(-maxR+1, maxR-1), 0.5]
+    while (abs(obj[0]-tp0[1]) < 1 and abs(obj[1]-tp0[2]) < 1) or (abs(obj[0]-tp1[1]) < 1 and abs(obj[1]-tp1[2]) < 1):
+      obj = [random.uniform(-maxR+1, maxR-1), random.uniform(-maxR+1, maxR-1), 0.5]
+    objects.append(obj)  
+  return tp0, tp1, objects, walls
 
 if __name__ == '__main__':
     main()
