@@ -9,6 +9,7 @@ import random
 import matplotlib.pyplot as plt
 from traj_planner_utils import *
 import numpy as np
+import time
 
 class Node():
 
@@ -48,6 +49,9 @@ class A_Star_Planner():
         Returns:
           traj (list of lists): A list of trajectory points with time, X, Y, Theta (s, m, m, rad).
     """
+
+    curTime = time.time()
+
     self.fringe = []
     self.desired_state = desired_state
     self.objects = objects #x, y coordinates of the objects
@@ -77,15 +81,23 @@ class A_Star_Planner():
     path = self.createPath(goal_node)
 
     traj = []
+    final_length = 0
 
     for idx in range(len(path) - 1):
       pose1 = path[idx]
       pose2 = path[idx + 1]
       
-      inter_pose_traj, _ = construct_dubins_traj(pose1.state, pose2.state)
+      inter_pose_traj, traj_edge_distance_list = construct_dubins_traj(pose1.state, pose2.state)
       traj += inter_pose_traj
 
-    return traj
+      final_length += traj_edge_distance_list[-1]
+
+    print(final_length)
+
+    timeTook = time.time()  - curTime
+    print("Time Taken: ", timeTook)
+    
+    return traj, final_length, timeTook
     
   def createPath(self, goal_node):
     """
@@ -279,6 +291,9 @@ class A_Star_Planner():
     return False
 
 if __name__ == '__main__':
+  avgFinalLength = 0
+  avgTime = 0
+  count = 0
   for i in range(0, 5):
     maxR = 10
     tp0 = [0, -8, -8, 0]
@@ -292,6 +307,13 @@ if __name__ == '__main__':
       while (abs(obj[0]-tp0[1]) < 1 and abs(obj[1]-tp0[2]) < 1) or (abs(obj[0]-tp1[1]) < 1 and abs(obj[1]-tp1[2]) < 1):
         obj = [random.uniform(-maxR+1, maxR-1), random.uniform(-maxR+1, maxR-1), 0.5]
       objects.append(obj)
-    traj = planner.construct_traj(tp0, tp1, objects, walls)
+    traj, finalLength, timeTook = planner.construct_traj(tp0, tp1, objects, walls)
     if len(traj) > 0:
       plot_traj(traj, traj, objects, walls)
+      avgFinalLength += finalLength
+      avgTime += timeTook
+      count += 1
+  
+  print(avgFinalLength / count)
+  print("Avg Time: ", avgTime / count)
+    
