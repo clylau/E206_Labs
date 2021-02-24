@@ -34,7 +34,7 @@ class A_Star_Planner():
   DIST_TO_GOAL_THRESHOLD = 0.5 #m
   CHILDREN_DELTAS = [-0.5, -0.25, 0.0, 0.25, 0.5]
   DISTANCE_DELTA = 1.5 #m
-  EDGE_TIME = 20 #s
+  EDGE_TIME = 10 #s
   LARGE_NUMBER = 9999999
 
 
@@ -80,6 +80,7 @@ class A_Star_Planner():
 
     path = self.createPath(goal_node)
 
+    #initialize the trajectory with the first point
     traj = []
     final_length = 0
 
@@ -88,6 +89,10 @@ class A_Star_Planner():
       pose2 = path[idx + 1]
       
       inter_pose_traj, traj_edge_distance_list = construct_dubins_traj(pose1.state, pose2.state)
+      
+      #remove the start point from the trajectory to prevent doubling up (end point of last trajectory is start point of this one)
+      if(idx != 0):
+        inter_pose_traj = inter_pose_traj[1:]
       traj += inter_pose_traj
 
       final_length += traj_edge_distance_list[-1]
@@ -106,6 +111,9 @@ class A_Star_Planner():
     while(currNode.parent_node != None):
       path.insert(0, currNode)
       currNode = currNode.parent_node
+    
+    #insert the final node
+    path.insert(0, currNode)
 
     return path
 
@@ -234,7 +242,7 @@ class A_Star_Planner():
     traj = np.array(traj)
 
     #radius of objects in environment
-    r_check = 1.5
+    r_check = 1.25
 
     #define the indices of the trajectory points to check for colisions
     traj_idx = np.arange(len(traj), step = 2)

@@ -97,14 +97,14 @@ def plot_traj(traj_desired, traj_actual, objects, walls):
   axis_array[0].set_ylabel('Y (m)')
   axis_array[0].axis('equal')
   
-  axis_array[1].plot(time_stamp_desired, x_desired,'k')
-  axis_array[1].plot(time_stamp_desired, y_desired,'k--')
-  axis_array[1].plot(time_stamp_desired, theta_desired,'k-.')
+  axis_array[1].plot(time_stamp_desired, x_desired,'b')
+  axis_array[1].plot(time_stamp_desired, y_desired,'b--')
+  axis_array[1].plot(time_stamp_desired, theta_desired,'b-.')
   axis_array[1].plot(time_stamp_actual, x_actual,'k')
   axis_array[1].plot(time_stamp_actual, y_actual,'k--')
   axis_array[1].plot(time_stamp_actual, theta_actual,'k-.')
   axis_array[1].set_xlabel('Time (s)')
-  axis_array[1].legend(['X Desired (m)', 'Y Desired (m)', 'Theta Desired (rad)'])#, 'X (m)', 'Y (m)', 'Theta (rad)'])
+  axis_array[1].legend(['X Desired (m)', 'Y Desired (m)', 'Theta Desired (rad)', 'X (m)', 'Y (m)', 'Theta (rad)'])
 
   plt.show()
   
