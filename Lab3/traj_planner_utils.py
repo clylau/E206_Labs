@@ -6,6 +6,7 @@
 import math
 import dubins
 import matplotlib.pyplot as plt
+import numpy as np
 
 DISTANCE_STEP_SIZE = 0.1 #m
 COLLISION_INDEX_STEP_SIZE = 5
@@ -20,11 +21,29 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
         traj (list of lists): A list of trajectory points with time, X, Y, Theta (s, m, m, rad).
         traj_distance (float): The length ofthe trajectory (m).
   """
-  traj = []
-  traj_distance = 0
-  
-  # Add code here
+  # traj = []
+  # traj_point = [0,0,0,0]
+  # traj.append(traj_point)
 
+  turning_rad = 0.25
+  step_size = DISTANCE_STEP_SIZE
+
+  path = dubins.shortest_path(traj_point_0[1:], traj_point_1[1:], turning_rad)
+  configs, _ = path.sample_many(step_size)
+
+  dt = (traj_point_1[0] - traj_point_0[0]) / len(configs)
+  timeStamp = traj_point_0[0]
+
+  for i in range(len(configs)):
+      configs[i] = list(configs[i])
+      configs[i].insert(0, timeStamp)
+      timeStamp += dt
+
+  configs.append(traj_point_1)
+
+  traj = configs
+
+  traj_distance = np.arange(len(configs))*step_size #TODO: verify this
       
   return traj, traj_distance
 
