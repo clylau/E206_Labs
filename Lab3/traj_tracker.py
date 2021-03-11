@@ -34,6 +34,7 @@ class TrajectoryTracker():
     #find the closest point in time
     time_of_interest = current_state[0] + LOOK_AHEAD_TIME
     traj_times = np.array([traj_point[0] for traj_point in self.traj])
+    #print(traj_times)
     closest_idx = np.argmin(np.abs(traj_times - time_of_interest))
 
     closest_point = self.traj[closest_idx]

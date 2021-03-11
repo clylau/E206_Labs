@@ -63,8 +63,11 @@ class Expansive_Planner():
     self.add_to_tree(initialNode)
 
     notDone = True
+    count = 0
+    goalNode = None
 
-    while(notDone):
+    while(notDone and count < self.MAX_NUM_ITERATIONS):
+      count = count + 1
       randNode = self.sample_random_node()
       newNode = self.generate_random_node(randNode)
 
@@ -76,11 +79,15 @@ class Expansive_Planner():
         if goalNode is not None:
           notDone = False
 
-    traj, traj_cost = self.build_traj(goalNode)
+    traj = []
+    traj_cost = self.LARGE_NUMBER
+      
+    if(goalNode is not None):
+      traj, traj_cost = self.build_traj(goalNode)
       
     return traj, traj_cost
     
-  def construct_optimized_traj(self, initial_state, desired_state, objects, walls):
+  def construct_optimized_traj(self, initial_state, desired_state, objects, walls, returnCounts = False):
     """ Construct the best trajectory possible within a limited time budget.
         Arguments:
           traj_point_0 (list of floats): The trajectory's first trajectory point with time, X, Y, Theta (s, m, m, rad).
@@ -89,13 +96,32 @@ class Expansive_Planner():
           best_traj (list of lists): A list of trajectory points with time, X, Y, Theta (s, m, m, rad).
           best_traj_cost (float): The path lenght of the shortest traj (m).
     """
-    start_time = time.perf_counter()
     best_traj = []
     best_traj_cost = self.LARGE_NUMBER
+    start_time = time.perf_counter()
+    numIters = 0
+    numSuccesses = 0
+    total_costs = 0
+
+    while((time.perf_counter() - start_time) < self.PLAN_TIME_BUDGET):
+
+      currTraj, currCost = self.construct_traj(initial_state, desired_state, objects, walls)
+
+      if(currCost < self.LARGE_NUMBER):
+        total_costs = total_costs + currCost
+        numSuccesses = numSuccesses + 1
+
+      if(currCost < best_traj_cost):
+        best_traj = currTraj
+        best_traj_cost = currCost
+
+      numIters = numIters + 1
     
-    # Add code here to make many trajs within a time budget and return the best traj #
-    # You will want to call construct_traj #
-      
+    if(returnCounts):
+      print("Total Successes: ",numSuccesses ,"Number of Tries: ", numIters)
+      print("Average (successful) path length: ", total_costs/(numSuccesses + 1e-9))
+      print()
+
     return best_traj, best_traj_cost
     
   def add_to_tree(self, node):
@@ -212,7 +238,7 @@ class Expansive_Planner():
       traj_point_1 = node_B.state
       traj_point_1[3] = math.atan2(traj_point_1[2]-traj_point_0[2], traj_point_1[1]-traj_point_0[1])
       edge_traj, edge_traj_distance = construct_dubins_traj(traj_point_0, traj_point_1)
-      traj = traj + edge_traj
+      traj = traj + edge_traj[:-1]
       traj_cost = traj_cost + edge_traj_distance
     
     return traj, traj_cost
@@ -230,8 +256,11 @@ class Expansive_Planner():
     traj, traj_distance = construct_dubins_traj(node_1.state, node_2.state)
     return collision_found(traj, self.objects, self.walls)
 
+
 if __name__ == '__main__':
-  for i in range(0, 5):
+  total_path_cost = 0
+  num_successes = 0
+  for i in range(0, 20):
     maxR = 10
     tp0 = [0, -8, -8, 0]
     tp1 = [300, 8, 8, 0]
@@ -244,7 +273,11 @@ if __name__ == '__main__':
       while (abs(obj[0]-tp0[1]) < 1 and abs(obj[1]-tp0[2]) < 1) or (abs(obj[0]-tp1[1]) < 1 and abs(obj[1]-tp1[2]) < 1):
         obj = [random.uniform(-maxR+1, maxR-1), random.uniform(-maxR+1, maxR-1), 1.0]
       objects.append(obj)
-    #traj, traj_cost = planner.construct_optimized_traj(tp0, tp1, objects, walls)
+    #traj, traj_cost = planner.construct_optimized_traj(tp0, tp1, objects, walls, returnCounts=True)
     traj, traj_cost = planner.construct_traj(tp0, tp1, objects, walls)
     if len(traj) > 0:
       plot_traj(traj, traj, objects, walls)
+      num_successes += 1
+      total_path_cost += traj_cost
+  print("Average path length: ", total_path_cost/num_successes)
+  print("number of successful paths generated: ", num_successes, "out of 20 trials")

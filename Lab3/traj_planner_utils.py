@@ -25,7 +25,7 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
   # traj_point = [0,0,0,0]
   # traj.append(traj_point)
 
-  turning_rad = 0.25
+  turning_rad = 0.75
   step_size = DISTANCE_STEP_SIZE
 
   path = dubins.shortest_path(traj_point_0[1:], traj_point_1[1:], turning_rad)
@@ -45,7 +45,7 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
 
   traj_distance = np.arange(len(configs))*step_size #TODO: verify this
       
-  return traj, traj_distance
+  return traj, traj_distance[-1]
 
 def plot_traj(traj_desired, traj_actual, objects, walls):
   """ Plot a trajectory in the X-Y space and in the time-X,Y,Theta space.
