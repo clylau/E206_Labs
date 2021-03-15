@@ -44,6 +44,12 @@ class Expansive_Planner():
   def __init__(self):
     self.fringe = []
 
+  def adjust_variables(self, min_dist, max_dist):
+    """
+    """
+    self.MIN_RAND_DISTANCE = min_dist
+    self.MAX_RAND_DISTANCE = max_dist
+  
   def construct_traj(self, initial_state, desired_state, objects, walls):
     """ Construct a trajectory in the X-Y space and in the time-X,Y,Theta space.
         Arguments:
@@ -258,13 +264,42 @@ class Expansive_Planner():
 
 
 if __name__ == '__main__':
+
   total_path_cost = 0
   num_successes = 0
-  for i in range(0, 20):
+
+  #defining varialbes to save experiment data
+  baseline_path_cost = []
+  exp1_path_cost = []
+  exp2_path_cost = []
+  exp3_path_cost = []
+
+  baseline_numSuccess = 0
+  exp1_numSuccess = 0
+  exp2_numSuccess = 0
+  exp3_numSuccess = 0
+
+  numTrials = 1000
+
+  for i in range(0, numTrials):
     maxR = 10
     tp0 = [0, -8, -8, 0]
     tp1 = [300, 8, 8, 0]
-    planner = Expansive_Planner()
+
+    #define each of the different planners for use in the experiments
+    #we need to run every time to reset the planner values for each trial
+    planner_base = Expansive_Planner()
+
+    planner_exp1 = Expansive_Planner()
+    planner_exp1.adjust_variables(5, 9)
+
+    planner_exp2 = Expansive_Planner()
+    planner_exp2.adjust_variables(1, 2)
+
+    planner_exp3 = Expansive_Planner()
+    planner_exp3.adjust_variables(8, 9)
+
+    #creates the walls and objects for this trial
     walls = [[-maxR, maxR, maxR, maxR, 2*maxR], [maxR, maxR, maxR, -maxR, 2*maxR], [maxR, -maxR, -maxR, -maxR, 2*maxR], [-maxR, -maxR, -maxR, maxR, 2*maxR] ]
     num_objects = 10
     objects = []
@@ -273,11 +308,97 @@ if __name__ == '__main__':
       while (abs(obj[0]-tp0[1]) < 1 and abs(obj[1]-tp0[2]) < 1) or (abs(obj[0]-tp1[1]) < 1 and abs(obj[1]-tp1[2]) < 1):
         obj = [random.uniform(-maxR+1, maxR-1), random.uniform(-maxR+1, maxR-1), 1.0]
       objects.append(obj)
+
+
     #traj, traj_cost = planner.construct_optimized_traj(tp0, tp1, objects, walls, returnCounts=True)
-    traj, traj_cost = planner.construct_traj(tp0, tp1, objects, walls)
-    if len(traj) > 0:
-      plot_traj(traj, traj, objects, walls)
-      num_successes += 1
-      total_path_cost += traj_cost
-  print("Average path length: ", total_path_cost/num_successes)
-  print("number of successful paths generated: ", num_successes, "out of 20 trials")
+    #traj, traj_cost = planner.construct_traj(tp0, tp1, objects, walls)
+
+    #####run all our planners####
+    #run baseline planner
+    base_traj, base_cost = planner_base.construct_traj(tp0, tp1, objects, walls)
+
+    if(len(base_traj) > 0):
+      baseline_numSuccess += 1
+      baseline_path_cost.append(base_cost)
+
+    #run experiment 1 planner
+    exp1_traj, exp1_cost = planner_exp1.construct_traj(tp0, tp1, objects, walls)
+
+    if(len(exp1_traj) > 0):
+      exp1_numSuccess += 1
+      exp1_path_cost.append(exp1_cost)
+
+    #run experiment 2 planner
+    exp2_traj, exp2_cost = planner_exp2.construct_traj(tp0, tp1, objects, walls)
+
+    if(len(exp2_traj) > 0):
+      exp2_numSuccess += 1
+      exp2_path_cost.append(exp2_cost)
+
+    #run experiment 3 planner
+    exp3_traj, exp3_cost = planner_exp3.construct_traj(tp0, tp1, objects, walls)
+
+    if(len(exp3_traj) > 0):
+      exp3_numSuccess += 1
+      exp3_path_cost.append(exp3_cost)
+
+
+
+  #### calculate and printout results ######
+  #baseline results
+  base_mean = np.mean(baseline_path_cost) 
+  base_std = np.std(baseline_path_cost)
+  base_min = np.min(baseline_path_cost)
+  base_max = np.max(baseline_path_cost)
+  base_success_rate = baseline_numSuccess / numTrials
+
+  print("Baseline Results")
+  print("Number of trials: ", numTrials, " Minimum node distance: ", planner_base.MIN_RAND_DISTANCE, " Maximum node distance: ", planner_base.MAX_RAND_DISTANCE)
+  print("Mean: ", base_mean," Stdev: ", base_std, " min: ", base_min, " Max: ", base_max)
+  print("success rate: ", base_success_rate)
+  print()
+
+  #experiment 1 results
+  exp1_mean = np.mean(exp1_path_cost) 
+  exp1_std = np.std(exp1_path_cost)
+  exp1_min = np.min(exp1_path_cost)
+  exp1_max = np.max(exp1_path_cost)
+  exp1_success_rate = exp1_numSuccess / numTrials
+
+  print("Experiment 1 Results")
+  print("Number of trials: ", numTrials, " Minimum node distance: ", planner_exp1.MIN_RAND_DISTANCE, " Maximum node distance: ", planner_exp1.MAX_RAND_DISTANCE)
+  print("Mean: ", exp1_mean,"Stdev: ", exp1_std, "min: ", exp1_min, "Max: ", exp1_max)
+  print("success rate: ", exp1_success_rate)
+  print()
+
+  #experiment 2 results
+  exp2_mean = np.mean(exp2_path_cost) 
+  exp2_std = np.std(exp2_path_cost)
+  exp2_min = np.min(exp2_path_cost)
+  exp2_max = np.max(exp2_path_cost)
+  exp2_success_rate = exp2_numSuccess / numTrials
+
+  print("Experiment 2 Results")
+  print("Number of trials: ", numTrials, " Minimum node distance: ", planner_exp2.MIN_RAND_DISTANCE, " Maximum node distance: ", planner_exp2.MAX_RAND_DISTANCE)
+  print("Mean: ", exp2_mean,"Stdev: ", exp2_std, "min: ", exp2_min, "Max: ", exp2_max)
+  print("success rate: ", exp2_success_rate)
+  print()
+
+  #experiment 3 results
+  exp3_mean = np.mean(exp3_path_cost) 
+  exp3_std = np.std(exp3_path_cost)
+  exp3_min = np.min(exp3_path_cost)
+  exp3_max = np.max(exp3_path_cost)
+  exp3_success_rate = exp3_numSuccess / numTrials
+
+  print("Experiment 3 Results")
+  print("Number of trials: ", numTrials, " Minimum node distance: ", planner_exp3.MIN_RAND_DISTANCE, " Maximum node distance: ", planner_exp3.MAX_RAND_DISTANCE)
+  print("Mean: ", exp3_mean,"Stdev: ", exp3_std, "min: ", exp3_min, "Max: ", exp3_max)
+  print("success rate: ", exp3_success_rate)
+  print()
+
+    #   total_path_cost += traj_cost
+
+
+  # print("Average path length: ", total_path_cost/num_successes)
+  # print("number of successful paths generated: ", num_successes, "out of 20 trials")
