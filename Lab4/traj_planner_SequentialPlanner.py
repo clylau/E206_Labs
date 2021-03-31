@@ -52,8 +52,33 @@ class Sequential_Planner():
     """
     
     # Add code here to create a traj set #
+
+    otherTrajectories = []
+    traj_set = []
+
+    start_time = time.time()
+    for i in range(len(planning_problem_list)):
+
+      planProb = planning_problem_list[i]
+      expPlanner = planProb.planner # Get expansive planner
+
+      # Add old trajectories as obstacles first
+      planProb.add_trajs_as_obstacles(otherTrajectories)
+
+      # Create desired traj
+      desired_traj, _ = expPlanner.construct_traj(planProb.initial_state, planProb.desired_state, planProb.objects, planProb.walls)
+
+      # Add trajectory to list of old trajectories
+      if len(desired_traj) != 0:
+        otherTrajectories.append(desired_traj)
+
+      traj_set.append(desired_traj)
+
+    total_time = time.time() - start_time
+    mean_time = total_time / len(planning_problem_list)
+    print(mean_time)
         
-    return []
+    return traj_set, mean_time
       
 def random_pose(maxR):
   """ Function to generate random pose (x, y, theta) within bounds +/- maxR.
@@ -84,41 +109,91 @@ def get_new_random_pose(pose_list, maxR, radius):
   
   return new_pose + [radius]
 
+
 if __name__ == '__main__':
-  num_robots = 1
+  maxRobots = 10
   num_objects = 2
   maxR = 10
   obj_vel = 0.0
-  
-  robot_initial_pose_list = []
-  robot_initial_state_list = []
-  for _ in range(num_robots):
-    ns = get_new_random_pose(robot_initial_pose_list, maxR, ROBOT_RADIUS)
-    robot_initial_pose_list += [ns]
-    robot_initial_state_list += [[0, ns[0], ns[1], ns[2]]]
-  
-  robot_desired_pose_list = []
-  robot_desired_state_list = []
-  for _ in range(num_robots):
-    ns = get_new_random_pose(robot_desired_pose_list, maxR, ROBOT_RADIUS)
-    robot_desired_pose_list += [ns]
-    robot_desired_state_list += [[0, ns[0], ns[1], ns[2]]]
 
-  object_list = []
-  for _ in range(num_objects):
-    object_radius = random.uniform(0.3, 1.0)
-    obj_pose = get_new_random_pose(robot_initial_pose_list + robot_desired_pose_list, maxR, object_radius)
-    obj_yaw = obj_pose[2]
-    object_list += [ ['obstacle',[obj_pose[0], obj_pose[1], 0.5, obj_vel, obj_yaw]] ]
-    
-  walls = [[-maxR, maxR, maxR, maxR, 2*maxR], [maxR, maxR, maxR, -maxR, 2*maxR], [maxR, -maxR, -maxR, -maxR, 2*maxR], [-maxR, -maxR, -maxR, maxR, 2*maxR] ]
-    
-  planning_problem_list = []
-  for i in range(num_robots):
-    pp = Planning_Problem(robot_initial_state_list[i], robot_desired_state_list[i], object_list, walls)
-    planning_problem_list.append(pp)
+  total_means = []
   
-  planner = Sequential_Planner()
-  traj_list = planner.construct_traj_set(planning_problem_list)
-  if len(traj_list) > 0:
-    plot_traj_list(traj_list, object_list, walls)
+  for i in range(maxRobots):
+    num_robots = i + 1
+    robot_initial_pose_list = []
+    robot_initial_state_list = []
+
+    for _ in range(num_robots):
+      ns = get_new_random_pose(robot_initial_pose_list, maxR, ROBOT_RADIUS)
+      robot_initial_pose_list += [ns]
+      robot_initial_state_list += [[0, ns[0], ns[1], ns[2]]]
+    
+    robot_desired_pose_list = []
+    robot_desired_state_list = []
+    for _ in range(num_robots):
+      ns = get_new_random_pose(robot_desired_pose_list, maxR, ROBOT_RADIUS)
+      robot_desired_pose_list += [ns]
+      robot_desired_state_list += [[0, ns[0], ns[1], ns[2]]]
+
+    object_list = []
+    for _ in range(num_objects):
+      object_radius = random.uniform(0.3, 1.0)
+      obj_pose = get_new_random_pose(robot_initial_pose_list + robot_desired_pose_list, maxR, object_radius)
+      obj_yaw = obj_pose[2]
+      object_list += [ ['obstacle',[obj_pose[0], obj_pose[1], 0.5, obj_vel, obj_yaw]] ]
+      
+    walls = [[-maxR, maxR, maxR, maxR, 2*maxR], [maxR, maxR, maxR, -maxR, 2*maxR], [maxR, -maxR, -maxR, -maxR, 2*maxR], [-maxR, -maxR, -maxR, maxR, 2*maxR] ]
+      
+    planning_problem_list = []
+    for i in range(num_robots):
+      pp = Planning_Problem(robot_initial_state_list[i], robot_desired_state_list[i], object_list, walls)
+      planning_problem_list.append(pp)
+    
+    planner = Sequential_Planner()
+    traj_list, mean_time = planner.construct_traj_set(planning_problem_list)
+    total_means.append(mean_time)
+    if len(traj_list) > 0:
+      plot_traj_list(traj_list, object_list, walls)
+
+  plt.plot(np.arange(1, len(total_means) + 1), total_means)
+  plt.show()
+
+
+# if __name__ == '__main2__':
+#   num_robots = 4
+#   num_objects = 2
+#   maxR = 10
+#   obj_vel = 0.0
+  
+#   robot_initial_pose_list = []
+#   robot_initial_state_list = []
+#   for _ in range(num_robots):
+#     ns = get_new_random_pose(robot_initial_pose_list, maxR, ROBOT_RADIUS)
+#     robot_initial_pose_list += [ns]
+#     robot_initial_state_list += [[0, ns[0], ns[1], ns[2]]]
+  
+#   robot_desired_pose_list = []
+#   robot_desired_state_list = []
+#   for _ in range(num_robots):
+#     ns = get_new_random_pose(robot_desired_pose_list, maxR, ROBOT_RADIUS)
+#     robot_desired_pose_list += [ns]
+#     robot_desired_state_list += [[0, ns[0], ns[1], ns[2]]]
+
+#   object_list = []
+#   for _ in range(num_objects):
+#     object_radius = random.uniform(0.3, 1.0)
+#     obj_pose = get_new_random_pose(robot_initial_pose_list + robot_desired_pose_list, maxR, object_radius)
+#     obj_yaw = obj_pose[2]
+#     object_list += [ ['obstacle',[obj_pose[0], obj_pose[1], 0.5, obj_vel, obj_yaw]] ]
+    
+#   walls = [[-maxR, maxR, maxR, maxR, 2*maxR], [maxR, maxR, maxR, -maxR, 2*maxR], [maxR, -maxR, -maxR, -maxR, 2*maxR], [-maxR, -maxR, -maxR, maxR, 2*maxR] ]
+    
+#   planning_problem_list = []
+#   for i in range(num_robots):
+#     pp = Planning_Problem(robot_initial_state_list[i], robot_desired_state_list[i], object_list, walls)
+#     planning_problem_list.append(pp)
+  
+#   planner = Sequential_Planner()
+#   traj_list, _ = planner.construct_traj_set(planning_problem_list)
+#   if len(traj_list) > 0:
+#     plot_traj_list(traj_list, object_list, walls)

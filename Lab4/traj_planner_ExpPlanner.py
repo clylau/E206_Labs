@@ -59,10 +59,35 @@ class Expansive_Planner():
     self.walls = walls
     
     # Add code here to make a traj #
+    initialNode = Node(initial_state, None, 0)
+    self.add_to_tree(initialNode)
+
+    notDone = True
+    count = 0
+    goalNode = None
+
+    while(notDone and count < self.MAX_NUM_ITERATIONS):
+      count = count + 1
+      randNode = self.sample_random_node()
+      newNode = self.generate_random_node(randNode)
+
+      if (newNode.edge_distance < self.LARGE_NUMBER):
+        self.add_to_tree(newNode)
+
+        goalNode = self.generate_goal_node(newNode, desired_state)
+
+        if goalNode is not None:
+          notDone = False
+
+    traj = []
+    traj_cost = self.LARGE_NUMBER
       
-    return [], self.LARGE_NUMBER
+    if(goalNode is not None):
+      traj, traj_cost = self.build_traj(goalNode)
+      
+    return traj, traj_cost
     
-  def construct_optimized_traj(self, initial_state, desired_state, objects, walls):
+  def construct_optimized_traj(self, initial_state, desired_state, objects, walls, returnCounts = False):
     """ Construct the best trajectory possible within a limited time budget.
         Arguments:
           traj_point_0 (list of floats): The trajectory's first trajectory point with time, X, Y, Theta (s, m, m, rad).
@@ -71,13 +96,32 @@ class Expansive_Planner():
           best_traj (list of lists): A list of trajectory points with time, X, Y, Theta (s, m, m, rad).
           best_traj_cost (float): The path lenght of the shortest traj (m).
     """
-    start_time = time.perf_counter()
     best_traj = []
     best_traj_cost = self.LARGE_NUMBER
+    start_time = time.perf_counter()
+    numIters = 0
+    numSuccesses = 0
+    total_costs = 0
+
+    while((time.perf_counter() - start_time) < self.PLAN_TIME_BUDGET):
+
+      currTraj, currCost = self.construct_traj(initial_state, desired_state, objects, walls)
+
+      if(currCost < self.LARGE_NUMBER):
+        total_costs = total_costs + currCost
+        numSuccesses = numSuccesses + 1
+
+      if(currCost < best_traj_cost):
+        best_traj = currTraj
+        best_traj_cost = currCost
+
+      numIters = numIters + 1
     
-    # Add code here to make many trajs within a time budget and return the best traj #
-    # You will want to call construct_traj #
-      
+    if(returnCounts):
+      print("Total Successes: ",numSuccesses ,"Number of Tries: ", numIters)
+      print("Average (successful) path length: ", total_costs/(numSuccesses + 1e-9))
+      print()
+
     return best_traj, best_traj_cost
     
   def add_to_tree(self, node):
@@ -87,17 +131,23 @@ class Expansive_Planner():
     """
     
     # Add code here to add a node to the tree#
-    pass
+
+    self.tree.append(node)
     
   def sample_random_node(self):
     """ Randomly select a node from the tree and return it.
         Returns:
           node (Node): A randomly selected node from the tree.
     """
-        
-    # Add code here to return a random node from the tree #
     
-    return None
+    # Add code here to return a random node from the tree #
+
+    # Using naive approach because dum
+    idx = np.arange(len(self.tree))
+
+    randomIdx = np.random.choice(idx, 1)[0]
+
+    return self.tree[randomIdx]
     
   def generate_random_node(self, node_to_expand):
     """ Create a new node by expanding from the parent node using.
@@ -108,8 +158,25 @@ class Expansive_Planner():
     """
     
     # Add code here to make a new node #
-    
-    return None
+
+    rand_dist = np.random.uniform(self.MIN_RAND_DISTANCE, self.MAX_RAND_DISTANCE)
+    rand_angle = np.random.uniform(0, 2*np.pi)
+
+    t = node_to_expand.state[0]
+    x = node_to_expand.state[1]
+    y = node_to_expand.state[2]
+    theta = node_to_expand.state[3]
+
+    t_child = t + rand_dist / self.MEAN_EDGE_VELOCITY
+    x_child = x + rand_dist * np.cos(angle_diff(theta + rand_angle))
+    y_child = y + rand_dist * np.sin(angle_diff(theta + rand_angle))
+    theta_child = angle_diff(theta + 2*rand_angle)
+
+    edge_dist = self.calculate_edge_distance([t_child, x_child, y_child, theta_child], node_to_expand)
+
+    childNode = Node([t_child, x_child, y_child, theta_child], node_to_expand, edge_dist)
+
+    return childNode
 
   def generate_goal_node(self, node, desired_state):
     """ Create a goal node by connecting from the parent node using.
@@ -120,8 +187,18 @@ class Expansive_Planner():
     """
     
     # Add code here to make a goal node if possible #
-      
-    return None
+
+    #This function checks if the node of interest has a direct path to the goal. If so, we return the goal node
+    #if not, we return None
+    edge_dist = self.calculate_edge_distance(desired_state, node)
+
+    if(edge_dist >= self.LARGE_NUMBER):
+      return None
+
+    goal_node = Node(desired_state, node, edge_dist)
+
+    #otherwise, we've found our path!
+    return goal_node
 
   def calculate_edge_distance(self, state, parent_node):
     """ Calculate the cost of an dubins path edge from a parent node's state to another state.

@@ -116,6 +116,10 @@ def plot_traj_list(traj_list, objects, walls):
   """
   fig, axis_array = plt.subplots(2,1)
   for traj_desired in traj_list:
+    if len(traj_desired) == 0:
+      print('Failed To Find Traj for Robot')
+      continue
+      
     time_stamp_desired = []
     x_desired = []
     y_desired = []
