@@ -35,11 +35,13 @@ class Expansive_Planner():
   EDGE_TIME = 10 #s
   LARGE_NUMBER = 9999999
   
-  MAX_NUM_ITERATIONS = 2000
+  MAX_NUM_ITERATIONS = 1000
   MIN_RAND_DISTANCE = 1.0 #m
   MAX_RAND_DISTANCE = 5.0 #m
   MEAN_EDGE_VELOCITY = 0.75 #m
   PLAN_TIME_BUDGET = 2.0 #s
+  LOWER_EDGE_VELOCITY = 0.5
+  UPPER_EDGE_VELOCITY = 1.0
     
   def __init__(self):
     self.fringe = []
@@ -167,7 +169,10 @@ class Expansive_Planner():
     y = node_to_expand.state[2]
     theta = node_to_expand.state[3]
 
-    t_child = t + rand_dist / self.MEAN_EDGE_VELOCITY
+    velocity = self.MEAN_EDGE_VELOCITY
+    #velocity = np.random.uniform(self.LOWER_EDGE_VELOCITY, self.UPPER_EDGE_VELOCITY)
+
+    t_child = t + rand_dist / velocity
     x_child = x + rand_dist * np.cos(angle_diff(theta + rand_angle))
     y_child = y + rand_dist * np.sin(angle_diff(theta + rand_angle))
     theta_child = angle_diff(theta + 2*rand_angle)
