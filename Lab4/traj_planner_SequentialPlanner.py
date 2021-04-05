@@ -11,6 +11,7 @@ from traj_planner_utils import *
 import numpy as np
 import time
 from traj_planner_ExpPlanner import *
+import copy
 
 class Planning_Problem():
   """ Class that holds a single motion planning problem for one robot.
@@ -43,7 +44,7 @@ class Sequential_Planner():
   def __init__(self):
     pass
 
-  def construct_traj_set(self, planning_problem_list):
+  def construct_traj_set(self, planning_problem_list, ordering = "static"):
     """ Function that creates a set of trajectories for several planning problems (1 per robot).
         - Parameters:
           - planning_problem_list (list of Planning_Problems): One pp to solve per robot.
@@ -55,11 +56,37 @@ class Sequential_Planner():
 
     otherTrajectories = []
     traj_set = []
+    pp_order_idx = []
+
+    #random ordering
+    if ordering == "random":
+      pp_order_idx = np.random.choice(np.arange(len(planning_problem_list)), size = len(planning_problem_list), replace = False)
+      
+    #random ordering
+    elif ordering == "priority":
+      
+      distance_to_closest_obstacle = []
+      for idx in range(len(planning_problem_list)):
+
+        #retreive information about the planning problem's obstacles
+        currProblem = planning_problem_list[idx]
+        obstacles = currProblem.objects
+        obstacle_states = [obs[1] for obs in obstacles]
+        obstacle_positions = np.array([[state[0], state[1]] for state in obstacle_states])
+
+        distances = np.sqrt(np.square(obstacle_positions[:, 0] - currProblem.initial_state[0]) + np.square(obstacle_positions[:, 1] - currProblem.initial_state[1]))
+        distance_to_closest_obstacle.append(np.min(distances))
+
+      pp_order_idx = np.argsort(distance_to_closest_obstacle)
+      
+    #static ordering
+    else:
+      pp_order_idx = np.arange(len(planning_problem_list))
 
     start_time = time.time()
     for i in range(len(planning_problem_list)):
 
-      planProb = planning_problem_list[i]
+      planProb = planning_problem_list[pp_order_idx[i]]
       expPlanner = planProb.planner # Get expansive planner
 
       # Add old trajectories as obstacles first
@@ -78,8 +105,8 @@ class Sequential_Planner():
 
     total_time = time.time() - start_time
     mean_time = total_time / len(planning_problem_list)
-    print("num planning problems: ", len(planning_problem_list))
-    print("num found trajs: ", len(otherTrajectories))
+    # print("num planning problems: ", len(planning_problem_list))
+    # print("num found trajs: ", len(otherTrajectories))
     if(len(planning_problem_list) != len(otherTrajectories)):
       mean_time = np.NaN
     #print(mean_time)
@@ -118,17 +145,17 @@ def get_new_random_pose(pose_list, maxR, radius):
 
 if __name__ == '__main__':
   disable_plotting = True
-  numTrials = 100
-  maxRobots = 5
-  num_objects = 0
+  numTrials = 1000
+  maxRobots = 10
+  num_objects = 4
   maxR = 10
   obj_vel = 0
-  plan_time = 5 #seconds
+  plan_time = 0.3 #seconds
 
-  total_means = np.zeros(numTrials)
+  total_means = np.zeros([maxRobots, numTrials])
   for trial in range(numTrials):
-    for robots in range(1):
-      num_robots = maxRobots
+    for robots in range(maxRobots):
+      num_robots = robots + 1
       robot_initial_pose_list = []
       robot_initial_state_list = []
 
@@ -164,34 +191,39 @@ if __name__ == '__main__':
         
       planning_problem_list = []
       for i in range(num_robots):
-        pp = Planning_Problem(robot_initial_state_list[i], robot_desired_state_list[i], object_list, walls)
+        pp = Planning_Problem(robot_initial_state_list[i], robot_desired_state_list[i], copy.deepcopy(object_list), copy.deepcopy(walls))
         planning_problem_list.append(pp)
       
-      test_means = []
-      start_time = time.time()
-      while time.time() - start_time <= plan_time:
+      #Part 3: Ordering code
+      # test_means = []
+      # start_time = time.time()
+      # while time.time() - start_time <= plan_time:
 
-        for idx in range(len(planning_problem_list)):
-          planning_problem_list[idx].objects = object_list
+      #   planner = Sequential_Planner()
+      #   traj_list, mean_time = planner.construct_traj_set(copy.deepcopy(planning_problem_list), ordering = "priority")
+      #   # print("num Objects in problem: ", len(planning_problem_list[0].objects))
+      #   test_means.append(mean_time)
 
-        planner = Sequential_Planner()
-        traj_list, mean_time = planner.construct_traj_set(planning_problem_list)
-        # print("num Objects in problem: ", len(planning_problem_list[0].objects))
-        test_means.append(mean_time)
+      planner = Sequential_Planner()
+      traj_list, mean_time = planner.construct_traj_set(copy.deepcopy(planning_problem_list), ordering = "static")
 
-      
-      #add the time to the numpy array
-      total_means[trial] = np.nanmean(test_means)
+      total_means[robots, trial] = mean_time
 
       if (len(traj_list) > 0) and not disable_plotting:
         plot_traj_list(traj_list, object_list, walls)
         #print(traj_list)
 
-  # robot_mean_plan_times = np.nanmean(total_means, axis = 1)
-  # plt.plot(np.arange(1, maxRobots + 1), robot_mean_plan_times)
-  # plt.xlabel("Number of Robots (#)")
-  # plt.ylabel("Mean Plan Time Construction (s)")
-  # plt.show()
+  robot_mean_plan_times = np.nanmean(total_means, axis = 1)
+  # print(robot_mean_plan_times)
+
+  # print("num successful trials: ", np.sum(np.where(np.isnan(total_means), 0, 1)))
+  # print("mean plan time: ", robot_mean_plan_times)
+
+
+  plt.plot(np.arange(1, maxRobots + 1), robot_mean_plan_times)
+  plt.xlabel("Number of Robots (#)")
+  plt.ylabel("Mean Plan Time Construction (s)")
+  plt.show()
 
   # print("Mean Plan time for 5 robots: ", robot_mean_plan_times[3])
 

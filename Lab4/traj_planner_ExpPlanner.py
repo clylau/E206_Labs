@@ -170,7 +170,7 @@ class Expansive_Planner():
     theta = node_to_expand.state[3]
 
     velocity = self.MEAN_EDGE_VELOCITY
-    #velocity = np.random.uniform(self.LOWER_EDGE_VELOCITY, self.UPPER_EDGE_VELOCITY)
+    # velocity = np.random.uniform(self.LOWER_EDGE_VELOCITY, self.UPPER_EDGE_VELOCITY)
 
     t_child = t + rand_dist / velocity
     x_child = x + rand_dist * np.cos(angle_diff(theta + rand_angle))
