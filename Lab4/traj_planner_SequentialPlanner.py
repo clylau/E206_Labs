@@ -144,8 +144,8 @@ def get_new_random_pose(pose_list, maxR, radius):
 
 
 if __name__ == '__main__':
-  disable_plotting = True
-  numTrials = 1000
+  disable_plotting = False
+  numTrials = 1
   maxRobots = 10
   num_objects = 4
   maxR = 10
