@@ -1,16 +1,18 @@
 import math
 import matplotlib.pyplot as plt
+from utilities import *
 from APF import *
-from ExpansivePlanner import *
+#from ExpansivePlanner import *
 
 # Constants
 
+
 class Agent():
 
-    def __init__(self, isPursuer, pose, goal_pose, plannerType):
+    def __init__(self, isPursuer, pose, goal_pose, radius, id, plannerType):
 
         # Save room for both planners, later specify which one is not None
-        self.APF_planner = None
+        self.APF_planner = APFAgent(pose, goal_pose, radius, id)
         self.exp_planner = None
 
         # Keep track of it
@@ -25,22 +27,25 @@ class Agent():
 
         # Planner Type
         self.setPlanner(plannerType)
+        self.radius = radius
     
-    def setPlanner(plannerType):
+    def setPlanner(self, plannerType):
 
-        if plannerType == 'APF':
-            self.APF_planner = APF()
+        # if plannerType == 'APF':
+        #     self.APF_planner = APF()
 
-        else:
-            self.exp_planner = ExpansivePlanner()
+        # else:
+        #     self.exp_planner = ExpansivePlanner()
+        return None
 
-    def getNextPose(time_stamp):
+    def getNextPose(self, time_stamp):
 
-        if plannerType == 'APF':
-            return self.APF_planner.getNextPose(time_stamp)
+        # if plannerType == 'APF':
+        #     return self.APF_planner.getNextPose(time_stamp)
 
-        else:
-            return self.exp_planner.getNextPose(time_stamp)
+        # else:
+        #     return self.exp_planner.getNextPose(time_stamp)
+        return None
 
     def collision(self):
 
