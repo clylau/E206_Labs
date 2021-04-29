@@ -18,13 +18,18 @@ if __name__ == '__main__':
 
   test_pose = Pose(0, 0, 0)
   goal_pose = Pose(15, 15, 0)
-  test_agent = Agent(False, test_pose, goal_pose, 1, 0, "exp")
+  test_agent = Agent(False, test_pose, goal_pose, 1, 0, "APF")
+
 
   #objects are LoL x, y, radius
+  obj1_pose = Pose(5, 5, 0)
+  obj2_pose = Pose(-5, -5, 0)
+  obj_list = [Agent(False, obj1_pose, obj1_pose, 1, -1), Agent(False, obj2_pose, obj2_pose, 1, -1)]
 
   #define variables of interest
   agent_list = [test_agent]
-  obj_list = [[5, 5, 1], [-5, -5, 1]]
+  #obj_list = [[5, 5, 1], [-5, -5, 1]]
+  #obj_list = [Pose(5, 5, 0), Pose(-5, -5, 0)]
   world_edge = 25
 
   #so its the same type of stand as Star Platinum
@@ -46,7 +51,8 @@ if __name__ == '__main__':
     for agent in agent_list:
       agent.APF_planner.update(delta_t, agent_list, obj_list, world_edge)
 
-    plot_za_warudo([test_agent], [[5, 5, 1], [-5, -5, 1]], 25, False)
+    #plot_za_warudo([test_agent], [[5, 5, 1], [-5, -5, 1]], 25, False)
+    plot_za_warudo(agent_list, obj_list, world_edge, True)
 
 
     time_step += delta_t
