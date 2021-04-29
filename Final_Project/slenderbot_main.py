@@ -11,14 +11,24 @@ def create_world():
 
   return None
 
+def checkStatus(agent_list, obj_list):
+
+  for agent in agent_list:
+    if agent.at_goal():
+      return agent.id
+  return None
+
 if __name__ == '__main__':
 
   # Create world
   print("hi slenderbo—OH SHIT")
 
   test_pose = Pose(0, 0, 0)
+  test_pose2 = Pose(-2, 4, 0)
   goal_pose = Pose(15, 15, 0)
   test_agent = Agent(False, test_pose, goal_pose, 1, 0, "APF")
+
+  test_agent2 = Agent(False, test_pose2, test_agent.pose, 1, 1, "APF")
 
 
   #objects are LoL x, y, radius
@@ -27,7 +37,7 @@ if __name__ == '__main__':
   obj_list = [Agent(False, obj1_pose, obj1_pose, 1, -1), Agent(False, obj2_pose, obj2_pose, 1, -1)]
 
   #define variables of interest
-  agent_list = [test_agent]
+  agent_list = [test_agent, test_agent2]
   #obj_list = [[5, 5, 1], [-5, -5, 1]]
   #obj_list = [Pose(5, 5, 0), Pose(-5, -5, 0)]
   world_edge = 25
@@ -49,13 +59,21 @@ if __name__ == '__main__':
     # incremental_theta += delta_t*2*np.pi/max_time_step
 
     for agent in agent_list:
-      agent.APF_planner.update(delta_t, agent_list, obj_list, world_edge)
+      agent.update(delta_t, agent_list, obj_list, world_edge)
       # print("agent state: ", "[", agent.pose.x, ", ", agent.pose.y, ", ", agent.pose.theta, "]" )
       # print("APF planner state: ", "[", agent.APF_planner.pose.x, ", ", agent.APF_planner.pose.y, ", ", agent.APF_planner.pose.theta, "]" )
 
     #plot_za_warudo([test_agent], [[5, 5, 1], [-5, -5, 1]], 25, False)
     plot_za_warudo(agent_list, obj_list, world_edge, False)
 
+    status = checkStatus(agent_list, obj_list)
+
+    if status is not None:
+      print('Agent ', status, " has won")
+      plot_za_warudo(agent_list, obj_list, world_edge, True)
+      experiment_running = False
+
+    #agent_list[1].updateGoalPose(agent_list[0].pose)
 
     time_step += delta_t
 

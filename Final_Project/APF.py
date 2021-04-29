@@ -13,14 +13,14 @@ goal_threshold = 0.5 #m
 
 class AgentForce():
   
-  def __init__(self):
-    self.id = 0
+  def __init__(self, id, k_att = 5, k_rep = 100000, rho_0 = 4):
+    self.id = id
     # self.k_att = 1
     # self.k_rep = 100000
     # self.rho_0 = 5
-    self.k_att = 5
-    self.k_rep = 100000
-    self.rho_0 = 4
+    self.k_att = k_att
+    self.k_rep = k_rep
+    self.rho_0 = rho_0
     
   def generate_force_vector(self, id, agent_list, object_list, world_radius):
   
@@ -93,11 +93,10 @@ class APFAgent():
   K_w = 1
   K_v = 1
   w_max = 1
-  v_max = 2
+  v_max = 5#2
   radius = 0.5
   alive = True
-  af0 = AgentForce()
-  af1 = AgentForce()
+  
 
   def __init__(self, pose, goal_pose, radius, id):
     """ Constructor
@@ -110,6 +109,11 @@ class APFAgent():
     self.w = 0
     self.score = 0
     self.collided = False
+
+    if id == 0:
+      self.af = AgentForce(id)
+    else:
+      self.af = AgentForce(id, k_att = 10, k_rep = 0)
     
   def update(self, delta_t, agent_list, object_list, world_radius):
     """ Function to update an agents state.
@@ -132,10 +136,11 @@ class APFAgent():
         Returns:
           force_vector (list of 2 floats): The force vector the agent should follow for navigation.
     """
-    if self.id == 0:
-      return self.af0.generate_force_vector(self.id, agent_list, object_list, world_radius)
-    if self.id == 1:
-      return self.af1.generate_force_vector(self.id, agent_list, object_list, world_radius)
+    # if self.id == 0:
+    #   return self.af0.generate_force_vector(self.id, agent_list, object_list, world_radius)
+    # if self.id == 1:
+    #   return self.af1.generate_force_vector(self.id, agent_list, object_list, world_radius)
+    return self.af.generate_force_vector(self.id, agent_list, object_list, world_radius)
 
   def actuate_robot(self, apf_force_vector, delta_t):
     """ Convert a force vector to a control signal and actuate the agent like
@@ -184,6 +189,7 @@ class APFAgent():
         Returns:
           at_goal (Bool): True if the agent is at its goal pose.
     """
+    # print('Distance to goal: ', self.pose.distance_to(self.goal_pose))
     return self.pose.distance_to(self.goal_pose) < goal_threshold
 
   def update_score(self, time_step):

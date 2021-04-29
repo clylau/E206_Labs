@@ -35,23 +35,36 @@ class Agent():
     
     def setPlanner(self, plannerType):
 
-        if plannerType == 'APF':
+        if self.plannerType == 'APF':
             self.APF_planner = APFAgent(self.pose, self.goal_pose, self.radius, self.id)
 
         # else:
         #     self.exp_planner = ExpansivePlanner()
         return None
 
-    def getNextPose(self, time_stamp):
+    def updateGoalPose(self, new_goal):
+        self.goal_pose = new_goal
 
-        # if plannerType == 'APF':
-        #     return self.APF_planner.getNextPose(time_stamp)
+    def update(self, delta_t, agent_list, obj_list, world_edge):
+        if self.id == 0:
+            print('Pose of Evader: ', self.pose.x, self.pose.y, self.pose.theta)
+        if self.id == 1:
+            print('Goal of Pursuer: ', self.goal_pose.x, self.goal_pose.y, self.goal_pose.theta)
+
+        if self.plannerType == 'APF':
+            return self.APF_planner.update(delta_t, agent_list, obj_list, world_edge)
 
         # else:
         #     return self.exp_planner.getNextPose(time_stamp)
+
+        # if self.id == 1:
+        #     self.updateGoalPose(agent_list[0].pose)
+
         return None
 
-    def collision(self):
+    def collision(self, agent):
+        # if self.plannerType == 'APF':
+        #     return self.APF_planner.collision(agent)
 
         return False
 
@@ -60,5 +73,9 @@ class Agent():
         return False
         
     def at_goal(self):
+
+        if self.plannerType == 'APF':
+            return self.APF_planner.at_goal()
+
         
         return True
