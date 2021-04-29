@@ -9,30 +9,34 @@ from APF import *
 
 class Agent():
 
-    def __init__(self, isPursuer, pose, goal_pose, radius, id, plannerType):
+    def __init__(self, isPursuer, pose, goal_pose, radius, id, plannerType=None):
 
         # Save room for both planners, later specify which one is not None
-        self.APF_planner = APFAgent(pose, goal_pose, radius, id)
+        self.APF_planner = None#APFAgent(pose, goal_pose, radius, id)
         self.exp_planner = None
 
         # Keep track of it
         self.plannerType = plannerType
 
         # Boolean to tell whether or not we're the pursuer
+        # Will always be false if we're not a robot
         self.isPursuer = isPursuer
+        self.id = id
 
         # Keep track of pose, if pursuer, ignore goal pose
         self.pose = pose
         self.goal_pose = goal_pose
 
-        # Planner Type
-        self.setPlanner(plannerType)
         self.radius = radius
+
+        # Planner Type if a robot
+        if plannerType is not None:
+            self.setPlanner(plannerType)
     
     def setPlanner(self, plannerType):
 
-        # if plannerType == 'APF':
-        #     self.APF_planner = APF()
+        if plannerType == 'APF':
+            self.APF_planner = APFAgent(self.pose, self.goal_pose, self.radius, self.id)
 
         # else:
         #     self.exp_planner = ExpansivePlanner()
