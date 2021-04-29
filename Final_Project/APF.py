@@ -32,9 +32,9 @@ class AgentForce():
       if i != id:
         force = self.add(force, self.repulsionForce(agent_list[id], agent_list[i], "agent"))
     
-    # # Add repulsion from objects
-    # for i in range(len(object_list)):
-    #   force = self.add(force, self.repulsionForce(agent_list[id], object_list[i], "object"))
+    # Add repulsion from objects
+    for i in range(len(object_list)):
+      force = self.add(force, self.repulsionForce(agent_list[id], object_list[i], "object"))
     
     F_net = self.normalize(force)
 

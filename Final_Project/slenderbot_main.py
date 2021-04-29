@@ -50,9 +50,11 @@ if __name__ == '__main__':
 
     for agent in agent_list:
       agent.APF_planner.update(delta_t, agent_list, obj_list, world_edge)
+      # print("agent state: ", "[", agent.pose.x, ", ", agent.pose.y, ", ", agent.pose.theta, "]" )
+      # print("APF planner state: ", "[", agent.APF_planner.pose.x, ", ", agent.APF_planner.pose.y, ", ", agent.APF_planner.pose.theta, "]" )
 
     #plot_za_warudo([test_agent], [[5, 5, 1], [-5, -5, 1]], 25, False)
-    plot_za_warudo(agent_list, obj_list, world_edge, True)
+    plot_za_warudo(agent_list, obj_list, world_edge, False)
 
 
     time_step += delta_t

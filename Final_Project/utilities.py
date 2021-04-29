@@ -21,7 +21,7 @@ def plot_za_warudo(agent_list, object_list, world_edge_length, inital_plot):
     # fig = plt.figure()
     # ax = plt.gca()
 
-    ang_res = 1#0.2
+    ang_res = 0.6
     for agent in agent_list:
 
         #plot the agent circle
