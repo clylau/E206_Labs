@@ -13,7 +13,7 @@ goal_threshold = 0.5 #m
 
 class AgentForce():
   
-  def __init__(self, id, k_att = 5, k_rep = 100000, rho_0 = 4):
+  def __init__(self, id, k_att = 5, k_rep = 100000, rho_0 = 4): # Change k_rep to 10 for object collision
     self.id = id
     # self.k_att = 1
     # self.k_rep = 100000
@@ -47,8 +47,12 @@ class AgentForce():
 
     #dist = sqrt((agent.goal_pose.x - agent.pose.x)**2 + (agent.goal_pose.y - agent.pose.y)**2)
 
-    F_x = -self.k_att*(agent.pose.x - agent.goal_pose.x)
-    F_y = -self.k_att*(agent.pose.y - agent.goal_pose.y)
+    if True:#id == 0:
+      F_x = -self.k_att*(agent.pose.x - agent.goal_pose.x)
+      F_y = -self.k_att*(agent.pose.y - agent.goal_pose.y)
+    # else:
+    #   F_x = -self.k_att*(agent.pose.x - agent.goal_pose.x - 5)
+    #   F_y = -self.k_att*(agent.pose.y - agent.goal_pose.y - 5)
 
 
     return [F_x, F_y]
@@ -73,6 +77,9 @@ class AgentForce():
     else:
       F_x = k*(1/dist - 1/self.rho_0)*(agent1.pose.x - agent2.pose.x)/dist**3
       F_y = k*(1/dist - 1/self.rho_0)*(agent1.pose.y - agent2.pose.y)/dist**3
+
+    # if self.id == 1:
+    #   print('Fx', F_x, 'Fy', F_y)
     
     return [F_x, F_y]
     
@@ -80,8 +87,9 @@ class AgentForce():
     return [force_1[0] + force_2[0], force_1[1] + force_2[1]]
     
   def normalize(self, vector):
-    length = math.sqrt(vector[0]**2 + vector[1]**2)
-    return [vector[0] / length, vector[1] / length]
+    # length = math.sqrt(vector[0]**2 + vector[1]**2)
+    # return [vector[0] / length, vector[1] / length]
+    return vector
 
 
 class APFAgent():
@@ -93,7 +101,7 @@ class APFAgent():
   K_w = 1
   K_v = 1
   w_max = 1
-  v_max = 5#2
+  v_max = 2
   radius = 0.5
   alive = True
   
@@ -114,6 +122,8 @@ class APFAgent():
       self.af = AgentForce(id)
     else:
       self.af = AgentForce(id, k_att = 10, k_rep = 0)
+      #self.v_max = 3 # This is for collision between pursuer and evader
+      self.v_max = 2 # This should run it into the wall
     
   def update(self, delta_t, agent_list, object_list, world_radius):
     """ Function to update an agents state.
@@ -154,6 +164,7 @@ class APFAgent():
     w = self.K_w * angle_diff(force_angle-self.pose.theta)
     v = max(min(v, self.v_max), -self.v_max)
     w = max(min(w, self.w_max), -self.w_max)
+
     self.pose.x = self.pose.x + v * math.cos(self.pose.theta)*delta_t
     self.pose.y = self.pose.y + v * math.sin(self.pose.theta)*delta_t
     self.pose.theta = self.pose.theta + w*delta_t

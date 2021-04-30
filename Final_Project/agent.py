@@ -46,10 +46,10 @@ class Agent():
         self.goal_pose = new_goal
 
     def update(self, delta_t, agent_list, obj_list, world_edge):
-        if self.id == 0:
-            print('Pose of Evader: ', self.pose.x, self.pose.y, self.pose.theta)
-        if self.id == 1:
-            print('Goal of Pursuer: ', self.goal_pose.x, self.goal_pose.y, self.goal_pose.theta)
+        # if self.id == 0:
+        #     print('Pose of Evader: ', self.pose.x, self.pose.y, self.pose.theta)
+        # if self.id == 1:
+        #     print('Goal of Pursuer: ', self.goal_pose.x, self.goal_pose.y, self.goal_pose.theta)
 
         if self.plannerType == 'APF':
             return self.APF_planner.update(delta_t, agent_list, obj_list, world_edge)
@@ -62,11 +62,35 @@ class Agent():
 
         return None
 
-    def collision(self, agent):
-        # if self.plannerType == 'APF':
-        #     return self.APF_planner.collision(agent)
 
-        return False
+    def collision(self, agent):
+        """ Function to check if the agent is in collision with another agent.
+            Arguments:
+            agent (APF_agent): The other agent there could be a collision with.
+            Returns:
+            collision (Bool): True if there is a collision.
+        """
+        dist = math.sqrt((self.pose.x - agent.pose.x)**2 + (self.pose.y - agent.pose.y)**2)
+        return dist < self.radius + agent.radius #and self.alive and agent.alive
+
+    def out_of_bounds(self, world_length):
+        """ Function to check if the agent is out of bounds.
+            Arguments:
+            world_radius (float): The radius of the world in m.
+            Returns:
+            out_of_bounds (Bool): True if the agent is out of bounds.
+        """
+        if np.abs(self.pose.x) > world_length or np.abs(self.pose.y) > world_length:
+            return True
+
+        #dist = math.sqrt(self.pose.x**2 + self.pose.y**2)
+        #return dist > world_radius - self.radius
+
+    # def collision(self, agent):
+    #     # if self.plannerType == 'APF':
+    #     #     return self.APF_planner.collision(agent)
+
+    #     return False
 
     def agentCollision(self, otherAgent):
 
