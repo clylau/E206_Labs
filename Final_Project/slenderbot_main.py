@@ -5,16 +5,44 @@ import matplotlib.pyplot as plt
 import numpy as np
 from agent import *
 from utilities import *
+import copy
 
-def create_world():
+def create_world(world_edge, num_obj, obj_rad, agent_list, epsilon = 1):
+
+  #keep track of our successful object creations
+  created_obstacles = 0
+  obj_list = []
+
+  while created_obstacles < num_obj:
+    
+    x_obj = np.random.uniform(-world_edge + obj_rad, world_edge-obj_rad)
+    y_obj = np.random.uniform(-world_edge + obj_rad, world_edge-obj_rad)
 
 
-  return None
+    skip_iteraton = False
+    for agent in agent_list + obj_list:
+      
+      start = agent.pose 
+      goal = agent.goal_pose
+
+      dist_to_start = np.sqrt(np.square(x_obj - start.x) + np.square(y_obj - start.y))
+      dist_to_goal = np.sqrt(np.square(x_obj - goal.x) + np.square(y_obj - goal.y))
+
+      if(dist_to_start <= obj_rad + agent.radius + epsilon or dist_to_goal <= obj_rad + agent.radius + epsilon):
+        skip_iteraton = True
+
+    if(skip_iteraton == False):
+      pose = Pose(x_obj, y_obj, 0)
+      obj = Agent(False, pose, pose, obj_rad, -1)
+      obj_list.append(obj)
+      created_obstacles += 1
+        
+  return obj_list
 
 def checkStatus(agent_list, obj_list):
 
   for agent in agent_list:
-    if agent.at_goal():
+    if agent.at_goal(agent_list):
       return ('W', agent.id)
 
     for obj in obj_list:
@@ -43,24 +71,34 @@ if __name__ == '__main__':
   print("hi slenderbo—OH SHIT")
 
   test_pose = Pose(0, 0, 0)
-  #test_pose2 = Pose(-2, 4, 0)
-  test_pose2 = Pose(-12, -5, 0) # Let evader win
+  test_pose2 = Pose(-8, -8, 0)
+  #test_pose2 = Pose(-2, 4, 0) #all other tests
+  # test_pose2 = Pose(-12, -5, 0) # Let evader win
   goal_pose = Pose(15, 15, 0)
-  test_agent = Agent(False, test_pose, goal_pose, 1, 0, "APF")
+  robot_radius = 1
+  test_agent = Agent(False, test_pose, goal_pose, robot_radius, 0, "APF")
 
-  test_agent2 = Agent(False, test_pose2, test_agent.pose, 1, 1, "APF")
-
+  test_agent2 = Agent(False, test_pose2, test_agent.pose, robot_radius, 1, "EXP")
+  agent_list = [test_agent, test_agent2]
 
   #objects are LoL x, y, radius
   obj1_pose = Pose(5, 5, 0)
   obj2_pose = Pose(-5, -5, 0)
-  obj_list = [Agent(False, obj1_pose, obj1_pose, 1, -1), Agent(False, obj2_pose, obj2_pose, 1, -1)]
+  obstacle_radius = 1 #4
+  world_edge = 25
+  obj_list = create_world(world_edge, 25, obstacle_radius, agent_list)#[Agent(False, obj1_pose, obj1_pose, obstacle_radius, -1), Agent(False, obj2_pose, obj2_pose, obstacle_radius, -1)]
+
+  #initialize any expansive planners
+  for agent in agent_list:
+    if(agent.plannerType != "APF"):
+      agent.exp_planner.init_traj(agent, obj_list, world_edge)
+
 
   #define variables of interest
-  agent_list = [test_agent, test_agent2]
+  
   #obj_list = [[5, 5, 1], [-5, -5, 1]]
   #obj_list = [Pose(5, 5, 0), Pose(-5, -5, 0)]
-  world_edge = 25
+  
 
   #so its the same type of stand as Star Platinum
   #so its the same type of plot as plot_world
@@ -69,7 +107,7 @@ if __name__ == '__main__':
   experiment_running = True
   delta_t = 0.1
   time_step = 0
-  max_time_step = 25
+  max_time_step = 100
   incremental_theta = 0
   traj_evader = []
   traj_pursuer = []
@@ -81,7 +119,7 @@ if __name__ == '__main__':
     # incremental_theta += delta_t*2*np.pi/max_time_step
 
     for agent in agent_list:
-      agent.update(delta_t, agent_list, obj_list, world_edge)
+      agent.update(time_step, delta_t, agent_list, obj_list, world_edge)
       if agent.id == 0:
         traj_evader.append([time_step, agent.pose.x, agent.pose.y, agent.pose. theta])
 
@@ -111,15 +149,12 @@ if __name__ == '__main__':
 
 
 #TODO:
-#1: Make a decision how to store information (pose, list, etc.) and be consistent about it
-#2: Organize the class structure framework in a way that makes sense
-#3: Do a goal check
-#4: do a collision check
-#5: get two robots in the environment, one of the robots should chase the other
-#6: Tune the APF so the robots move fest
-#7: get a haircut
-#8: Cry
-#0: graDUATE 
+#1: Fix bug w/ traj merging in Expansive planner
+#2: Tune APFs (go fest wtf)
+#3: Tune repulsion especially
+#4: tune expansive planner (plan time budget, etc)
+#5: figure out good experiment settings
+#6: different update rates for evader/pursuer
   
 
 

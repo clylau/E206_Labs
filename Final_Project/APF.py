@@ -120,10 +120,11 @@ class APFAgent():
 
     if id == 0:
       self.af = AgentForce(id)
+      self.v_max = 3 
     else:
       self.af = AgentForce(id, k_att = 10, k_rep = 0)
-      #self.v_max = 3 # This is for collision between pursuer and evader
-      self.v_max = 2 # This should run it into the wall
+      self.v_max = 3 # This is for collision between pursuer and evader
+      # self.v_max = 2 # This should run it into the wall
     
   def update(self, delta_t, agent_list, object_list, world_radius):
     """ Function to update an agents state.
@@ -169,31 +170,37 @@ class APFAgent():
     self.pose.y = self.pose.y + v * math.sin(self.pose.theta)*delta_t
     self.pose.theta = self.pose.theta + w*delta_t
   
-  def collision(self, agent):
-    """ Function to check if the agent is in collision with another agent.
-        Arguments:
-          agent (APF_agent): The other agent there could be a collision with.
-        Returns:
-          collision (Bool): True if there is a collision.
-    """
-    dist = math.sqrt((self.pose.x - agent.pose.x)**2 + (self.pose.y - agent.pose.y)**2)
-    return dist < self.radius + agent.radius and self.alive and agent.alive
+  # def collision(self, agent):
+  #   """ Function to check if the agent is in collision with another agent.
+  #       Arguments:
+  #         agent (APF_agent): The other agent there could be a collision with.
+  #       Returns:
+  #         collision (Bool): True if there is a collision.
+  #   """
+  #   dist = math.sqrt((self.pose.x - agent.pose.x)**2 + (self.pose.y - agent.pose.y)**2)
+  #   return dist < self.radius + agent.radius and self.alive and agent.alive
     
-  def remove(self):
-    """ Function to reset the pose to be at the origin and set alive to false.
-    """
-    self.pose = Pose(0, 0, 0)
-    self.alive = False
+  # def remove(self):
+  #   """ Function to reset the pose to be at the origin and set alive to false.
+  #   """
+  #   self.pose = Pose(0, 0, 0)
+  #   self.alive = False
     
-  def out_of_bounds(self, world_radius):
-    """ Function to check if the agent is out of bounds.
-        Arguments:
-          world_radius (float): The radius of the world in m.
-        Returns:
-          out_of_bounds (Bool): True if the agent is out of bounds.
-    """
-    dist = math.sqrt(self.pose.x**2 + self.pose.y**2)
-    return dist > world_radius - self.radius
+  # def out_of_bounds(self, world_edge):
+  #   """ Function to check if the agent is out of bounds.
+  #       Arguments:
+  #         world_radius (float): The radius of the world in m.
+  #       Returns:
+  #         out_of_bounds (Bool): True if the agent is out of bounds.
+  #   """
+  #   #dist = math.sqrt(self.pose.x**2 + self.pose.y**2)
+  #   x = self.pose.x
+  #   y = self.pose.y
+  #   r = self.radius
+
+  #   out = x < world_edge
+
+  #   return dist > world_radius - self.radius
     
   def at_goal(self):
     """ Function to check if the agent has reached its goal.
@@ -203,17 +210,17 @@ class APFAgent():
     # print('Distance to goal: ', self.pose.distance_to(self.goal_pose))
     return self.pose.distance_to(self.goal_pose) < goal_threshold
 
-  def update_score(self, time_step):
-    """ Function to update an agents score based on goal reached and collisions.
-        Arguments:
-          time_step (float): The world's current time step in s.
-    """
-    if self.alive:
-      if self.at_goal():
-        self.score = initial_score - time_step
-        self.remove()
-        print("Agent ",self.id,"done with score",self.score)
-      elif self.collided:
-        self.score = time_step
-        self.remove()
-        print("Agent ",self.id,"done with score",self.score)
+  # def update_score(self, time_step):
+  #   """ Function to update an agents score based on goal reached and collisions.
+  #       Arguments:
+  #         time_step (float): The world's current time step in s.
+  #   """
+  #   if self.alive:
+  #     if self.at_goal():
+  #       self.score = initial_score - time_step
+  #       self.remove()
+  #       print("Agent ",self.id,"done with score",self.score)
+  #     elif self.collided:
+  #       self.score = time_step
+  #       self.remove()
+  #       print("Agent ",self.id,"done with score",self.score)
