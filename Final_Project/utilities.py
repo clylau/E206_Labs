@@ -93,7 +93,7 @@ def plot_za_warudo(agent_list, object_list, world_edge_length, inital_plot, evad
     if evader_goal is None:
       plt.plot(15, 15, 'kx')
     else:
-      plt.plot(evader_goal.x, evader_goal.y)
+      plt.plot(evader_goal.x, evader_goal.y, 'kx')
 
     plt.axis("equal")
     if(inital_plot):

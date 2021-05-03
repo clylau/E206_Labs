@@ -45,7 +45,7 @@ class Expansive_Planner():
     LOWER_EDGE_VELOCITY = 2.5
     UPPER_EDGE_VELOCITY = 3.0
     LARGE_TIME_STAMP = 500
-    END_POINT_DIST_THRESH = 0.5
+    END_POINT_DIST_THRESH = 1.5
     
     def __init__(self):
 
@@ -53,7 +53,7 @@ class Expansive_Planner():
         self.traj_cost = self.LARGE_NUMBER
         self.costs = []
         self.last_update = 0
-        self.update_rate = 0.2
+        self.update_rate = 0.5#1
 
 
     def init_traj(self, agent, objects, walls):
@@ -119,6 +119,21 @@ class Expansive_Planner():
         #get a new trajectory
         time_of_interest = time_stamp + self.PLAN_TIME_BUDGET
 
+        self.last_update = time_stamp
+
+        # If there is no trajectory, try to find one
+        if len(self.traj) == 0:
+
+            inital_state = [time_of_interest, start_pose.x, start_pose.y, start_pose.theta]
+            desired_state = [inital_state[0] + self.LARGE_TIME_STAMP, goal_pose.x, goal_pose.y, goal_pose.theta]
+            traj, traj_cost, costs = self.construct_optimized_traj(inital_state, desired_state, objects, walls)
+
+            self.traj = traj
+            self.traj_cost = traj_cost
+            self.costs = costs
+            
+            return 
+
         #find the closest time stamp
         traj = np.array(self.traj)
         times = traj[:, 0]
@@ -144,7 +159,7 @@ class Expansive_Planner():
         if(traj_cost < self.LARGE_NUMBER):
 
             curr_cost_to_end = np.sum(self.costs[closest_idx + 1:])
-            if(traj_cost < curr_cost_to_end):
+            if(traj_cost < curr_cost_to_end): # Add to check if the goal has moved
                 self.traj = self.traj[:closest_idx] + traj
                 self.traj_cost = traj_cost
                 self.costs = self.costs[:closest_idx] + costs

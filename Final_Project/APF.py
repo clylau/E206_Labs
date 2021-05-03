@@ -8,12 +8,13 @@ import math
 # Constants
 default_agent_radius = 0.5 #m
 initial_score = 1000
-goal_threshold = 0.5 #m
+goal_threshold = 1 #m
+wall_epsilon = 2
 
 
 class AgentForce():
   
-  def __init__(self, id, k_att = 5, k_rep = 100000, rho_0 = 4): # Change k_rep to 10 for object collision
+  def __init__(self, id, k_att = 10, k_rep = 1000000, rho_0 = 6): # Change k_rep to 10 for object collision
     self.id = id
     # self.k_att = 1
     # self.k_rep = 100000
@@ -35,10 +36,35 @@ class AgentForce():
     # Add repulsion from objects
     for i in range(len(object_list)):
       force = self.add(force, self.repulsionForce(agent_list[id], object_list[i], "object"))
+
+    # Check wall
+    # x
+    if np.abs(world_radius - agent_list[id].pose.x) < self.rho_0:        
+      sign = np.sign(agent_list[id].pose.x)
+      wall_object = Pose(sign*world_radius, agent_list[id].pose.y, 0)
+      force = self.add(force, self.wallRepulsion(agent_list[id], wall_object))
+
+    if np.abs(world_radius - agent_list[id].pose.y) < self.rho_0:
+      sign = np.sign(agent_list[id].pose.y)
+      wall_object = Pose(agent_list[id].pose.x, sign*world_radius, 0)
+      force = self.add(force, self.wallRepulsion(agent_list[id], wall_object))
     
     F_net = self.normalize(force)
 
     return F_net
+
+  def wallRepulsion(self, agent, wall_pose):
+
+    dist = math.sqrt((agent.pose.x - wall_pose.x)**2 + (agent.pose.y - wall_pose.y)**2)
+
+    k = self.k_rep*2
+
+    F_x = k*(1/dist - 1/self.rho_0)*(agent.pose.x - wall_pose.x)/dist**3
+    F_y = k*(1/dist - 1/self.rho_0)*(agent.pose.y - wall_pose.y)/dist**3
+
+    return [F_x, F_y]
+    #return [F_y, -F_x]
+    
 
   def attractionForce(self, agent):
     
@@ -62,10 +88,18 @@ class AgentForce():
     # Edit this function
     dist = math.sqrt((agent1.pose.x - agent2.pose.x)**2 + (agent1.pose.y - agent2.pose.y)**2)
 
-    if force_type == "agent":
-      k = self.k_rep/2
-    else: 
-      k = self.k_rep
+    # if force_type == "agent":
+    #   k = self.k_rep/2
+    # else: 
+    #   k = self.k_rep
+
+    if force_type == 'agent' and self.id == 1:
+      k = 0
+    else:
+      if force_type == 'agent':
+        k = self.k_rep / 2
+      else:
+        k = self.k_rep
 
     F_x = 0
     F_y = 0
@@ -81,7 +115,11 @@ class AgentForce():
     # if self.id == 1:
     #   print('Fx', F_x, 'Fy', F_y)
     
+    # if force_type == 'agent':
+    #   return [F_x, F_y] 
+
     return [F_x, F_y]
+    #return [F_y, -F_x]
     
   def add(self, force_1, force_2):
     return [force_1[0] + force_2[0], force_1[1] + force_2[1]]
@@ -120,10 +158,10 @@ class APFAgent():
 
     if id == 0:
       self.af = AgentForce(id)
-      self.v_max = 3 
+      self.v_max = 1.75
     else:
-      self.af = AgentForce(id, k_att = 10, k_rep = 0)
-      self.v_max = 3 # This is for collision between pursuer and evader
+      self.af = AgentForce(id, k_att = 20, k_rep = 500000)
+      self.v_max = 2 # This is for collision between pursuer and evader
       # self.v_max = 2 # This should run it into the wall
     
   def update(self, delta_t, agent_list, object_list, world_radius):
