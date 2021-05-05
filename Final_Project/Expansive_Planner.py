@@ -40,14 +40,12 @@ class Expansive_Planner():
     MAX_NUM_ITERATIONS = 1000
     MIN_RAND_DISTANCE = 1.0 #m
     MAX_RAND_DISTANCE = 5.0 #m
-    MEAN_EDGE_VELOCITY = 2.75 #m
+    
     PLAN_TIME_BUDGET = 0.1 #s
-    LOWER_EDGE_VELOCITY = 2.5
-    UPPER_EDGE_VELOCITY = 3.0
     LARGE_TIME_STAMP = 500
     END_POINT_DIST_THRESH = 1.5
     
-    def __init__(self):
+    def __init__(self, goal_weight, opponent_weight, lower_speed, upper_speed):
 
         self.traj = [] 
         self.traj_cost = self.LARGE_NUMBER
@@ -55,8 +53,16 @@ class Expansive_Planner():
         self.last_update = 0
         self.update_rate = 0.5#1
 
+        #adding weight for the
+        self.goal_weight = goal_weight
+        self.opponent_weight = opponent_weight
 
-    def init_traj(self, agent, objects, walls):
+        self.LOWER_EDGE_VELOCITY = lower_speed
+        self.UPPER_EDGE_VELOCITY = upper_speed
+        self.MEAN_EDGE_VELOCITY = (self.LOWER_EDGE_VELOCITY + self.UPPER_EDGE_VELOCITY)/2
+
+
+    def init_traj(self, agent, objects, walls, id, agent_list):
 
         start_state = [0, agent.pose.x, agent.pose.y, agent.pose.theta]
         end_state = [self.LARGE_TIME_STAMP, agent.goal_pose.x, agent.goal_pose.y, agent.goal_pose.theta]
@@ -64,12 +70,11 @@ class Expansive_Planner():
 
         s = time.time()
         #traj, traj_cost, costs = self.construct_optimized_traj(start_state, end_state, objects, walls)
-        traj, traj_cost, costs = self.construct_traj(start_state, end_state, objects, walls)
+        traj, traj_cost, costs = self.construct_traj(start_state, end_state, objects, walls, id, agent_list)
 
         self.traj = traj 
         self.traj_cost = traj_cost
         self.costs = costs
-
 
 
     def update(self, time_stamp, agent):
@@ -113,7 +118,7 @@ class Expansive_Planner():
         
         
 
-    def update_traj(self, start_pose, goal_pose, time_stamp, objects, walls):
+    def update_traj(self, start_pose, goal_pose, time_stamp, objects, walls, id, agent_list):
         """
         """
         #get a new trajectory
@@ -126,7 +131,7 @@ class Expansive_Planner():
 
             inital_state = [time_of_interest, start_pose.x, start_pose.y, start_pose.theta]
             desired_state = [inital_state[0] + self.LARGE_TIME_STAMP, goal_pose.x, goal_pose.y, goal_pose.theta]
-            traj, traj_cost, costs = self.construct_optimized_traj(inital_state, desired_state, objects, walls)
+            traj, traj_cost, costs = self.construct_optimized_traj(inital_state, desired_state, objects, walls, id, agent_list)
 
             self.traj = traj
             self.traj_cost = traj_cost
@@ -148,21 +153,28 @@ class Expansive_Planner():
 
         inital_state = [start_point[0], start_point[1], start_point[2], start_point[3]]
         desired_state = [start_point[0] + self.LARGE_TIME_STAMP, goal_pose.x, goal_pose.y, goal_pose.theta]
-        traj, traj_cost, costs = self.construct_optimized_traj(inital_state, desired_state, objects, walls)
-
+        traj, traj_cost, costs = self.construct_optimized_traj(inital_state, desired_state, objects, walls, id, agent_list)
         # traj, traj_cost, costs = self.construct_traj(inital_state, desired_state, objects, walls)
 
 
         #check if the trajectory is better than our previous
 
         #we only care if we found a trajecotry. If we didn't, we need to use the previous
-        if(traj_cost < self.LARGE_NUMBER):
+        if(len(traj) > 0):
+
+            
 
             curr_cost_to_end = np.sum(self.costs[closest_idx + 1:])
+            # print("to end: ", curr_cost_to_end)
+            # print("traj: ", traj_cost)
+
+            # print(traj_cost) 
+            # print(curr_cost_to_end)       
             if(traj_cost < curr_cost_to_end): # Add to check if the goal has moved
                 self.traj = self.traj[:closest_idx] + traj
                 self.traj_cost = traj_cost
                 self.costs = self.costs[:closest_idx] + costs
+                # print("found better path")
 
             else:
                 goal_displacement = np.sqrt(np.square(self.traj[-1][1] - desired_state[1]) + np.square(self.traj[-1][2] - desired_state[2]))
@@ -173,7 +185,7 @@ class Expansive_Planner():
                     self.costs = self.costs[:closest_idx] + costs
 
 
-    def construct_traj(self, initial_state, desired_state, objects, walls):
+    def construct_traj(self, initial_state, desired_state, objects, walls, id, agent_list):
         """ Construct a trajectory in the X-Y space and in the time-X,Y,Theta space.
             Arguments:
             traj_point_0 (list of floats): The trajectory's first trajectory point with time, X, Y, Theta (s, m, m, rad).
@@ -213,11 +225,11 @@ class Expansive_Planner():
         costs = []
         
         if(goalNode is not None):
-            traj, traj_cost, costs = self.build_traj(goalNode)
+            traj, traj_cost, costs = self.build_traj(goalNode, id, agent_list)
         
         return traj, traj_cost, costs
     
-    def construct_optimized_traj(self, initial_state, desired_state, objects, walls, returnCounts = False):
+    def construct_optimized_traj(self, initial_state, desired_state, objects, walls, id, agent_list, returnCounts = False):
         """ Construct the best trajectory possible within a limited time budget.
             Arguments:
             traj_point_0 (list of floats): The trajectory's first trajectory point with time, X, Y, Theta (s, m, m, rad).
@@ -236,7 +248,7 @@ class Expansive_Planner():
 
         while((time.perf_counter() - start_time) < self.PLAN_TIME_BUDGET):
 
-            currTraj, currCost, costs = self.construct_traj(initial_state, desired_state, objects, walls)
+            currTraj, currCost, costs = self.construct_traj(initial_state, desired_state, objects, walls, id, agent_list)
 
             if(currCost < self.LARGE_NUMBER):
                 total_costs = total_costs + currCost
@@ -354,7 +366,7 @@ class Expansive_Planner():
 
         return traj_distance
 
-    def build_traj(self, goal_node):
+    def build_traj(self, goal_node, id, agent_list):
         """ Build a traj via back tracking from a goal node.
             Arguments:
             goal_node: The node to back track from and create a traj of dubins paths with.
@@ -376,10 +388,62 @@ class Expansive_Planner():
             node_B = node_list[i]
             traj_point_0 = node_A.state
             traj_point_1 = node_B.state
-            edge_traj, edge_traj_distance = construct_dubins_traj(traj_point_0, traj_point_1)
+            
+            edge_traj, edge_traj_distance = construct_dubins_traj(traj_point_0, traj_point_1, returnFull = True)
             traj = traj + edge_traj
-            traj_cost = traj_cost + edge_traj_distance
-            costs += [edge_traj_distance]
+            traj_cost = traj_cost + self.goal_weight*np.sum(edge_traj_distance)
+            costs += (np.array(edge_traj_distance)*self.goal_weight).tolist()
+
+        #correct the costs based on our weighted scheme
+        #if this is the evader, we adjust our cost accordingly
+        downsamp = 20
+        if id == 0:
+            
+            #retrieve information about the pursuer
+            pursuer = agent_list[1]
+            x_pursuer = pursuer.pose.x
+            y_pursuer = pursuer.pose.y
+
+            #get the trajectory in a convienent form
+            traj_arr = np.array(traj)
+            x_traj = traj_arr[:, 1]
+            x_traj = x_traj[::downsamp]
+
+            y_traj = traj_arr[:, 2]
+            y_traj = y_traj[::downsamp]
+
+            #calculate the minimum distance the pursuer is from our planned trajectory
+            dist_to_pursuer = np.sqrt(np.square(x_traj - x_pursuer ) + np.square(y_traj - y_pursuer))
+            min_dist = np.min(dist_to_pursuer)
+
+            eps = 1e-9
+            opponent_cost = self.opponent_weight/(min_dist + eps)
+
+            #adjusted the path cost depending on this weight
+            traj_cost += opponent_cost
+            costs[-1] = costs[-1] + opponent_cost #include it in costs so the rest of the code works
+
+
+        else:
+            #retrieve information about the pursuer
+            evader = agent_list[0]
+            x_goal = evader.goal_pose.x
+            y_goal = evader.goal_pose.y
+            traj_arr = np.array(traj)
+
+            x_traj = traj_arr[:, 1]
+            x_traj = x_traj[::downsamp]
+
+            y_traj = traj_arr[:, 2]
+            y_traj = y_traj[::downsamp]
+
+            #calculate the average distance the trajectory is from the evader's goal
+            dist_to_goal = np.sqrt(np.square(x_traj - x_goal) + np.square(y_traj - y_goal))
+            avg_dist = np.mean(dist_to_goal)
+
+            #adjust our costs
+            traj_cost += self.opponent_weight*avg_dist
+            costs[-1] = costs[-1] + self.opponent_weight*avg_dist
     
         return traj, traj_cost, costs
 

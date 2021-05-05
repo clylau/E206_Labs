@@ -30,6 +30,8 @@ def plot_za_warudo(agent_list, object_list, world_edge_length, inital_plot, evad
     # ax = plt.gca()
 
     ang_res = 0.6
+    agent_count = 0
+    colors = ["b", "r"]
     for agent in agent_list:
 
         #plot the agent circle
@@ -42,7 +44,7 @@ def plot_za_warudo(agent_list, object_list, world_edge_length, inital_plot, evad
         x_agent = x_center + rad*np.cos(ang)
         y_agent = y_center + rad*np.sin(ang)
 
-        plt.plot(x_agent, y_agent)
+        plt.plot(x_agent, y_agent, colors[agent_count])
 
         #plot the agent pointer
         theta = agent.pose.theta
@@ -54,7 +56,9 @@ def plot_za_warudo(agent_list, object_list, world_edge_length, inital_plot, evad
         if(agent.plannerType != "APF"):
           if(len(agent.exp_planner.traj) != 0):
             traj = np.array(agent.exp_planner.traj)
-            plt.plot(traj[:, 1], traj[:, 2], "r--")
+            plt.plot(traj[:, 1], traj[:, 2], colors[agent_count] + "--")
+        
+        agent_count += 1
 
 
     #plot the objects
@@ -209,7 +213,7 @@ def angle_diff(ang):
 
   return ang
 
-def construct_dubins_traj(traj_point_0, traj_point_1):
+def construct_dubins_traj(traj_point_0, traj_point_1, returnFull = False):
   """ Construc a trajectory in the X-Y space and in the time-X,Y,Theta space.
       Arguments:
         traj_point_0 (list of floats): The trajectory's first trajectory point with time, X, Y, Theta (s, m, m, rad).
@@ -224,8 +228,16 @@ def construct_dubins_traj(traj_point_0, traj_point_1):
   
   path = dubins.shortest_path(q0, q1, turning_radius)
   configurations, distances = path.sample_many(DISTANCE_STEP_SIZE)
+
+  # print(distances)
   
-  traj_distance = distances[-1]
+  if(returnFull):
+
+    #we want each point to be the distance from the previous point to this one
+    traj_distance = DISTANCE_STEP_SIZE*np.ones(len(distances))
+
+  else:
+    traj_distance = distances[-1]
   traj_time = traj_point_1[0] - traj_point_0[0]
   time_step_size = traj_time/len(distances)
   

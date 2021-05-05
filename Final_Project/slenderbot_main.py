@@ -7,7 +7,7 @@ from agent import *
 from utilities import *
 import copy
 
-def create_world(world_edge, num_obj, obj_rad, agent_list, epsilon = 3):
+def create_world(world_edge, num_obj, obj_rad, agent_list, epsilon = 4):
 
   #keep track of our successful object creations
   created_obstacles = 0
@@ -91,10 +91,10 @@ if __name__ == '__main__':
   # test_pose2 = Pose(-12, -5, 0) # Let evader win
   goal_pose = Pose(0, 20, 0)#Pose(15, 15, 0)
   robot_radius = 1
-  test_agent = Agent(False, test_pose, goal_pose, robot_radius, 0, "APF")
+  evader = Agent(False, test_pose, goal_pose, robot_radius, 0, "EXP")
 
-  test_agent2 = Agent(False, test_pose2, test_agent.pose, robot_radius, 1, "APF")
-  agent_list = [test_agent, test_agent2]
+  pursuer = Agent(False, test_pose2, evader.pose, robot_radius, 1, "EXP")
+  agent_list = [evader, pursuer]
 
   #objects are LoL x, y, radius
   obj1_pose = Pose(5, 5, 0)
@@ -104,9 +104,10 @@ if __name__ == '__main__':
   obj_list = create_world(world_edge, 16, obstacle_radius, agent_list)#[Agent(False, obj1_pose, obj1_pose, obstacle_radius, -1), Agent(False, obj2_pose, obj2_pose, obstacle_radius, -1)]
 
   #initialize any expansive planners
+  agent_count = 0
   for agent in agent_list:
     if(agent.plannerType != "APF"):
-      agent.exp_planner.init_traj(agent, obj_list, world_edge)
+      agent.exp_planner.init_traj(agent, obj_list, world_edge, agent_count, agent_list)
 
 
   #define variables of interest

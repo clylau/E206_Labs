@@ -40,7 +40,18 @@ class Agent():
             self.APF_planner = APFAgent(self.pose, self.goal_pose, self.radius, self.id)
 
         else:
-            self.exp_planner = Expansive_Planner()
+            if self.id == 0:
+                goal_weight = 0.8
+                opponent_weight = 0.2
+                v_min = 1.5
+                v_max = 1.75
+            else:
+                goal_weight = 0.7
+                opponent_weight = 0.3
+                v_min = 1.75
+                v_max = 2
+
+            self.exp_planner = Expansive_Planner(goal_weight, opponent_weight, v_min, v_max)
 
     def updateGoalPose(self, new_goal):
         self.goal_pose = new_goal
@@ -56,7 +67,7 @@ class Agent():
 
         else:
             if(time_stamp - self.exp_planner.last_update > self.exp_planner.update_rate):
-                self.exp_planner.update_traj(self.pose, self.goal_pose, time_stamp, obj_list, world_edge)
+                self.exp_planner.update_traj(self.pose, self.goal_pose, time_stamp, obj_list, world_edge, self.id, agent_list)
 
 
             return self.exp_planner.update(time_stamp + delta_t, self)

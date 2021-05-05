@@ -160,7 +160,7 @@ class APFAgent():
       self.af = AgentForce(id)
       self.v_max = 1.75
     else:
-      self.af = AgentForce(id, k_att = 20, k_rep = 500000)
+      self.af = AgentForce(id, k_att = 10, k_rep = 1000000, rho_0=6)
       self.v_max = 2 # This is for collision between pursuer and evader
       # self.v_max = 2 # This should run it into the wall
     
