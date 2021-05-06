@@ -7,7 +7,7 @@ from agent import *
 from utilities import *
 import copy
 
-def create_world(world_edge, num_obj, obj_rad, agent_list, epsilon = 4):
+def create_world(world_edge, num_obj, obj_rad, agent_list, epsilon = 5):
 
   #keep track of our successful object creations
   created_obstacles = 0
@@ -62,7 +62,7 @@ def checkStatus(agent_list, obj_list):
 
     for obj in obj_list:
       if agent.collision(obj):
-        print(agent.id, "collided")
+        # print(agent.id, "collided")
         return ('L', agent.id)
 
     # for otherAgent in agent_list:
@@ -74,94 +74,165 @@ def checkStatus(agent_list, obj_list):
     # if agent.collision():
     #   print(agent.id, "collided")
     if agent.out_of_bounds(25):
-      print(agent.id, "out of bounds")
+      # print(agent.id, "out of bounds")
       return ('L', agent.id)
       
       # TODO: RETURN DEAD
   return None
 
 if __name__ == '__main__':
-
-  # Create world
   print("hi slenderbo—OH SHIT")
 
-  test_pose = Pose(20, -20, np.pi/2)#Pose(0, 0, 0)
-  test_pose2 = Pose(-20, -20, 0)
-  #test_pose2 = Pose(-2, 4, 0) #all other tests
-  # test_pose2 = Pose(-12, -5, 0) # Let evader win
-  goal_pose = Pose(0, 20, 0)#Pose(15, 15, 0)
+  #define constants
+  evader_start = Pose(20, -20, np.pi/2)
+  pursuer_start = Pose(-20, -20, 0)
+  evader_goal = Pose(-5, 20, 0)
   robot_radius = 1
-  evader = Agent(False, test_pose, goal_pose, robot_radius, 0, "EXP")
-
-  pursuer = Agent(False, test_pose2, evader.pose, robot_radius, 1, "EXP")
-  agent_list = [evader, pursuer]
-
-  #objects are LoL x, y, radius
-  obj1_pose = Pose(5, 5, 0)
-  obj2_pose = Pose(-5, -5, 0)
   obstacle_radius = 1.5 #4
   world_edge = 25
-  obj_list = create_world(world_edge, 16, obstacle_radius, agent_list)#[Agent(False, obj1_pose, obj1_pose, obstacle_radius, -1), Agent(False, obj2_pose, obj2_pose, obstacle_radius, -1)]
 
-  #initialize any expansive planners
-  agent_count = 0
-  for agent in agent_list:
-    if(agent.plannerType != "APF"):
-      agent.exp_planner.init_traj(agent, obj_list, world_edge, agent_count, agent_list)
+  #define information relevant to the experiment
+  numTrials = 250
+  evader_planner_types = ["APF", "APF", "EXP", "EXP"]
+  pursuer_planner_types = ["APF", "EXP", "APF", "EXP"]
+  assert(len(evader_planner_types) ==  len(pursuer_planner_types))
+  enable_plotting = False
+
+  #define variables to hold information about the results
+  average_distances = np.zeros([len(evader_planner_types), numTrials])
+  completion_times = np.zeros([2, len(evader_planner_types), numTrials]) #robotID x experiment x trial
+  numFailures = np.zeros(len(evader_planner_types))
+  numCollisions_evader = np.zeros(len(evader_planner_types))
+  numCollisions_pursuer = np.zeros(len(evader_planner_types))
+  numWins_evader = np.zeros(len(evader_planner_types))
+  numWins_pursuer = np.zeros(len(evader_planner_types))
+
+  #TODO: increment the trial counter after all 4 experiments have run
+  trial_count = 0
+  while(trial_count < numTrials):
+
+    for experiment in range(len(evader_planner_types)):
+      evader = Agent(False, copy.deepcopy(evader_start), copy.deepcopy(evader_goal), robot_radius, 0, evader_planner_types[experiment])
+      pursuer = Agent(False, copy.deepcopy(pursuer_start), copy.deepcopy(evader.pose), robot_radius, 1, pursuer_planner_types[experiment])
+      agent_list = [evader, pursuer]
+
+      #all four experiments are done on the same set of obstacles for the trial
+      if(experiment == 0):
+        obj_list = create_world(world_edge, 12, obstacle_radius, agent_list)
+
+      #initialize any expansive planners
+      agent_count = 0
+      for agent in agent_list:
+        if(agent.plannerType != "APF"):
+          agent.exp_planner.init_traj(agent, obj_list, world_edge, agent_count, agent_list)
+      
+
+      #so its the same type of stand as Star Platinum
+      #so its the same type of plot as plot_world
+      if(enable_plotting):
+        plot_za_warudo(agent_list, obj_list, world_edge, True, evader_goal=goal_pose)
+
+      experiment_running = True
+      delta_t = 0.1
+      time_step = 0
+      max_time_step = 100
+      incremental_theta = 0
+      traj_evader = []
+      traj_pursuer = []
+
+      while time_step < max_time_step and experiment_running:
+
+        for agent in agent_list:
+          agent.update(time_step, delta_t, agent_list, obj_list, world_edge)
+
+          if agent.id == 0:
+            traj_evader.append([time_step, agent.pose.x, agent.pose.y, agent.pose. theta])
+
+          if agent.id == 1:
+            traj_pursuer.append([time_step, agent.pose.x, agent.pose.y, agent.pose. theta])
+          # print("agent state: ", "[", agent.pose.x, ", ", agent.pose.y, ", ", agent.pose.theta, "]" )
+          # print("APF planner state: ", "[", agent.APF_planner.pose.x, ", ", agent.APF_planner.pose.y, ", ", agent.APF_planner.pose.theta, "]" )
+
+        #plot_za_warudo([test_agent], [[5, 5, 1], [-5, -5, 1]], 25, False)
+        if(enable_plotting):
+          plot_za_warudo(agent_list, obj_list, world_edge, False, evader_goal=goal_pose)
+
+        status = checkStatus(agent_list, obj_list)
+
+        if status is not None:
+          if status[0] == 'W':
+            #print('Agent ', status[1], " has won")
+            average_distances[experiment, trial_count] = average_distance(traj_pursuer, traj_evader)
+            completion_times[0, experiment, trial_count] = np.NaN
+            completion_times[1, experiment, trial_count] = np.NaN
+
+            if(status[1] == 0):
+              completion_times[0, experiment, trial_count] = traj_evader[-1][0]
+              numWins_evader[experiment] += 1
+            else:
+              completion_times[1, experiment, trial_count] = traj_evader[-1][0]
+              numWins_pursuer[experiment] += 1
+            
+          if status[0] == 'L':
+            #print('Agent ', status[1], " has lost")
+            #if the pursuer ran into an obstruction
+            if(status[1] == 0):
+              numCollisions_pursuer[experiment] += 1
+              numFailures[experiment] += 1
+              average_distances[experiment, trial_count] = np.NaN
+            
+            #if the evader ran into an obsruction
+            else:
+              numCollisions_evader[experiment] += 1
+              numFailures[experiment] += 1
+              average_distances[experiment, trial_count] = np.NaN
+
+          if(enable_plotting):
+            plot_za_warudo(agent_list, obj_list, world_edge, True)
+
+          experiment_running = False
+
+        time_step += delta_t
+
+        #check if  the loop is about to end without a succesful completion
+        if(time_step >= max_time_step):
+          average_distances[experiment, trial_count] = np.NaN
+          completion_times[0, experiment, trial_count] = np.NaN
+          completion_times[1, experiment, trial_count] = np.NaN
+          numFailures[experiment] += 1
 
 
-  #define variables of interest
+      if(enable_plotting):
+        plot_overall_trajectory(agent_list, obj_list, 25, traj_evader, traj_pursuer)
+
+    #increment the trial count
+    trial_count += 1
   
-  #obj_list = [[5, 5, 1], [-5, -5, 1]]
-  #obj_list = [Pose(5, 5, 0), Pose(-5, -5, 0)]
-  
+  #print out summary statistics
 
-  #so its the same type of stand as Star Platinum
-  #so its the same type of plot as plot_world
-  plot_za_warudo(agent_list, obj_list, world_edge, True, evader_goal=goal_pose)
+  for idx in range(len(pursuer_planner_types)):
+    
+    
+    avg_dist_btwn = np.nanmean(average_distances[idx, :])
+    avg_evad_time = np.nanmean(completion_times[0, idx, :])
+    avg_pur_time = np.nanmean(completion_times[1, idx, :])
+    exp_failure_rate = numFailures[idx]/numTrials
+    evad_collision_rate = numCollisions_evader[idx]/numTrials
+    pur_collision_rate = numCollisions_pursuer[idx]/numTrials
+    evad_win_rate = numWins_evader[idx]/numTrials
+    pur_win_rate = numWins_pursuer[idx]/numTrials
 
-  experiment_running = True
-  delta_t = 0.1
-  time_step = 0
-  max_time_step = 100
-  incremental_theta = 0
-  traj_evader = []
-  traj_pursuer = []
+    print("Experiment ", idx, ": Evader - ", evader_planner_types[idx], "; Pursuer - ", pursuer_planner_types[idx])
+    print("Average distance between robots: ", avg_dist_btwn)
+    print("Average evader completion time: ", avg_evad_time)
+    print("Average pursuer completion time: ", avg_pur_time)
+    print("Evader win rate: ", evad_win_rate)
+    print("Pursuer win rate: ", pur_win_rate)
+    print("Experiment failure rate: ", exp_failure_rate)
+    print("Evader obstruction collision rate: ", evad_collision_rate)
+    print("Pursuer obstruction collision rate: ", pur_collision_rate)
+    print()
 
-  while time_step < max_time_step and experiment_running:
-
-    # test_agent.pose.x = 10*np.sin(2*np.pi*1/max_time_step*time_step)
-    # test_agent.pose.theta = incremental_theta
-    # incremental_theta += delta_t*2*np.pi/max_time_step
-
-    for agent in agent_list:
-      agent.update(time_step, delta_t, agent_list, obj_list, world_edge)
-      if agent.id == 0:
-        traj_evader.append([time_step, agent.pose.x, agent.pose.y, agent.pose. theta])
-
-      if agent.id == 1:
-        traj_pursuer.append([time_step, agent.pose.x, agent.pose.y, agent.pose. theta])
-      # print("agent state: ", "[", agent.pose.x, ", ", agent.pose.y, ", ", agent.pose.theta, "]" )
-      # print("APF planner state: ", "[", agent.APF_planner.pose.x, ", ", agent.APF_planner.pose.y, ", ", agent.APF_planner.pose.theta, "]" )
-
-    #plot_za_warudo([test_agent], [[5, 5, 1], [-5, -5, 1]], 25, False)
-    plot_za_warudo(agent_list, obj_list, world_edge, False, evader_goal=goal_pose)
-
-    status = checkStatus(agent_list, obj_list)
-
-    if status is not None:
-      if status[0] == 'W':
-        print('Agent ', status[1], " has won")
-      if status[0] == 'L':
-        print('Agent ', status[1], " has lost")
-      plot_za_warudo(agent_list, obj_list, world_edge, True)
-      experiment_running = False
-
-    #agent_list[1].updateGoalPose(agent_list[0].pose)
-
-    time_step += delta_t
-
-  plot_overall_trajectory(agent_list, obj_list, 25, traj_evader, traj_pursuer)
 
 
 #TODO:

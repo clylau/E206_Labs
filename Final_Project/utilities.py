@@ -22,6 +22,20 @@ class Pose():
     def distance_to(self, pose):
         return math.sqrt((self.x - pose.x)**2 + (self.y - pose.y)**2)
 
+def average_distance(pursuer_traj, evader_traj):
+  """
+  """
+  #TODO: figure out why the egyptian and sortie slap so fucking hard
+  x_pursuer = np.array(pursuer_traj)[:, 1]
+  y_pursuer = np.array(pursuer_traj)[:, 2]
+
+  x_evader = np.array(evader_traj)[:, 1]
+  y_evader = np.array(evader_traj)[:, 2]
+
+  distance = np.sqrt(np.square(x_evader - x_pursuer) + np.square(y_evader - y_pursuer))
+
+  return np.mean(distance)
+
 def plot_za_warudo(agent_list, object_list, world_edge_length, inital_plot, evader_goal=None):
     """
     """

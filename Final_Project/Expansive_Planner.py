@@ -41,7 +41,7 @@ class Expansive_Planner():
     MIN_RAND_DISTANCE = 1.0 #m
     MAX_RAND_DISTANCE = 5.0 #m
     
-    PLAN_TIME_BUDGET = 0.1 #s
+    PLAN_TIME_BUDGET = 0.3#s
     LARGE_TIME_STAMP = 500
     END_POINT_DIST_THRESH = 1.5
     
@@ -51,7 +51,7 @@ class Expansive_Planner():
         self.traj_cost = self.LARGE_NUMBER
         self.costs = []
         self.last_update = 0
-        self.update_rate = 0.5#1
+        self.update_rate = 1#1
 
         #adding weight for the
         self.goal_weight = goal_weight
@@ -87,11 +87,17 @@ class Expansive_Planner():
         times = traj[:, 0]
         closest_idx = np.argmin(np.abs(times - time_stamp))
 
-        if(closest_idx == len(self.traj) and time_stamp > times[-1]):
+        if(closest_idx >= len(self.traj)-1):
+
+            agent.pose.x = traj[closest_idx][1]
+            agent.pose.y = traj[closest_idx][2]
+            agent.pose.theta = traj[closest_idx][3]
             return
 
         #TODO: handle edge cases
+        
 
+        
         if(times[closest_idx] < time_stamp):
             start_pt = traj[closest_idx]
             end_pt = traj[closest_idx+1]
@@ -146,7 +152,7 @@ class Expansive_Planner():
 
         #TODO: handle edge cases
         #use the closest timestamp greater than the time of interest
-        if(times[closest_idx] < time_of_interest):
+        if(times[closest_idx] < time_of_interest and closest_idx != len(self.traj) - 1):
             closest_idx += 1
 
         start_point = traj[closest_idx]

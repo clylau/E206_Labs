@@ -14,7 +14,7 @@ wall_epsilon = 2
 
 class AgentForce():
   
-  def __init__(self, id, k_att = 10, k_rep = 1000000, rho_0 = 6): # Change k_rep to 10 for object collision
+  def __init__(self, id, k_att = 10, k_rep = 1000000, rho_0 = 4): # Change k_rep to 10 for object collision
     self.id = id
     # self.k_att = 1
     # self.k_rep = 100000
@@ -160,8 +160,8 @@ class APFAgent():
       self.af = AgentForce(id)
       self.v_max = 1.75
     else:
-      self.af = AgentForce(id, k_att = 10, k_rep = 1000000, rho_0=6)
-      self.v_max = 2 # This is for collision between pursuer and evader
+      self.af = AgentForce(id, k_att = 10, k_rep = 1000000, rho_0=4)
+      self.v_max = 2.25 # This is for collision between pursuer and evader
       # self.v_max = 2 # This should run it into the wall
     
   def update(self, delta_t, agent_list, object_list, world_radius):

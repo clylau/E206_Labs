@@ -29,6 +29,7 @@ class Agent():
         self.goal_pose = goal_pose
 
         self.radius = radius
+        self.replan_dist_thresh = 5
 
         # Planner Type if a robot
         if plannerType is not None:
@@ -46,10 +47,10 @@ class Agent():
                 v_min = 1.5
                 v_max = 1.75
             else:
-                goal_weight = 0.7
-                opponent_weight = 0.3
-                v_min = 1.75
-                v_max = 2
+                goal_weight = 0.5
+                opponent_weight = 0.5
+                v_min = 2
+                v_max = 2.25
 
             self.exp_planner = Expansive_Planner(goal_weight, opponent_weight, v_min, v_max)
 
@@ -66,9 +67,21 @@ class Agent():
             return self.APF_planner.update(delta_t, agent_list, obj_list, world_edge)
 
         else:
-            if(time_stamp - self.exp_planner.last_update > self.exp_planner.update_rate):
-                self.exp_planner.update_traj(self.pose, self.goal_pose, time_stamp, obj_list, world_edge, self.id, agent_list)
 
+            if(self.id == 0):
+                pursuer = agent_list[1]
+                x_pursuer = pursuer.pose.x
+                y_pursuer = pursuer.pose.y
+
+                dist_to_pursuer = np.sqrt(np.square(self.pose.x - x_pursuer) + np.square(self.pose.y - y_pursuer))
+
+                if((dist_to_pursuer <= self.replan_dist_thresh and time_stamp - self.exp_planner.last_update > self.exp_planner.update_rate) or time_stamp - self.exp_planner.last_update > 3*self.exp_planner.update_rate):
+                    self.exp_planner.update_traj(self.pose, self.goal_pose, time_stamp, obj_list, world_edge, self.id, agent_list)
+    
+            else:
+                if(time_stamp - self.exp_planner.last_update > self.exp_planner.update_rate):
+                    self.exp_planner.update_traj(self.pose, self.goal_pose, time_stamp, obj_list, world_edge, self.id, agent_list)
+                    pass
 
             return self.exp_planner.update(time_stamp + delta_t, self)
 
