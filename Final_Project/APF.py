@@ -157,11 +157,11 @@ class APFAgent():
     self.collided = False
 
     if id == 0:
-      self.af = AgentForce(id)
-      self.v_max = 1.75
+      self.af = AgentForce(id, k_att = 10, k_rep = 1000000, rho_0=4)
+      self.v_max = 1.88
     else:
       self.af = AgentForce(id, k_att = 10, k_rep = 1000000, rho_0=4)
-      self.v_max = 2.25 # This is for collision between pursuer and evader
+      self.v_max = 2.2 # This is for collision between pursuer and evader
       # self.v_max = 2 # This should run it into the wall
     
   def update(self, delta_t, agent_list, object_list, world_radius):

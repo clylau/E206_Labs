@@ -86,9 +86,9 @@ if __name__ == '__main__':
   #define constants
   evader_start = Pose(20, -20, np.pi/2)
   pursuer_start = Pose(-20, -20, 0)
-  evader_goal = Pose(-5, 20, 0)
+  evader_goal = Pose(-10, 20, 0)
   robot_radius = 1
-  obstacle_radius = 1.5 #4
+  obstacle_radius = 1.25 #4
   world_edge = 25
 
   #define information relevant to the experiment
@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     for experiment in range(len(evader_planner_types)):
       evader = Agent(False, copy.deepcopy(evader_start), copy.deepcopy(evader_goal), robot_radius, 0, evader_planner_types[experiment])
-      pursuer = Agent(False, copy.deepcopy(pursuer_start), copy.deepcopy(evader.pose), robot_radius, 1, pursuer_planner_types[experiment])
+      pursuer = Agent(False, copy.deepcopy(pursuer_start), evader.pose, robot_radius, 1, pursuer_planner_types[experiment])
       agent_list = [evader, pursuer]
 
       #all four experiments are done on the same set of obstacles for the trial
@@ -130,7 +130,7 @@ if __name__ == '__main__':
       #so its the same type of stand as Star Platinum
       #so its the same type of plot as plot_world
       if(enable_plotting):
-        plot_za_warudo(agent_list, obj_list, world_edge, True, evader_goal=goal_pose)
+        plot_za_warudo(agent_list, obj_list, world_edge, True, evader_goal=evader_goal)
 
       experiment_running = True
       delta_t = 0.1
@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
         #plot_za_warudo([test_agent], [[5, 5, 1], [-5, -5, 1]], 25, False)
         if(enable_plotting):
-          plot_za_warudo(agent_list, obj_list, world_edge, False, evader_goal=goal_pose)
+          plot_za_warudo(agent_list, obj_list, world_edge, False, evader_goal=evader_goal)
 
         status = checkStatus(agent_list, obj_list)
 
@@ -175,15 +175,15 @@ if __name__ == '__main__':
             
           if status[0] == 'L':
             #print('Agent ', status[1], " has lost")
-            #if the pursuer ran into an obstruction
+            #if the evader ran into an obstruction
             if(status[1] == 0):
-              numCollisions_pursuer[experiment] += 1
+              numCollisions_evader[experiment] += 1
               numFailures[experiment] += 1
               average_distances[experiment, trial_count] = np.NaN
             
-            #if the evader ran into an obsruction
+            #if the pursuer ran into an obstruction
             else:
-              numCollisions_evader[experiment] += 1
+              numCollisions_pursuer[experiment] += 1
               numFailures[experiment] += 1
               average_distances[experiment, trial_count] = np.NaN
 
